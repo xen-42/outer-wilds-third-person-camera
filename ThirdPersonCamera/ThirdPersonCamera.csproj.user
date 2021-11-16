@@ -2,8 +2,8 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectView>ProjectFiles</ProjectView>
-    <GameDir>C:\Program Files\Epic Games\OuterWilds</GameDir>
-    <OwmlDir>C:\Users\ricar\AppData\Roaming\OuterWildsModManager\OWML</OwmlDir>
-    <ModUniqueName>Raicuparta.ModTemplate</ModUniqueName>
+    <GameDir>F:\SteamLibrary\steamapps\common\Outer Wilds</GameDir>
+    <OwmlDir>C:\Users\Nicholas\AppData\Roaming\OuterWildsModManager\OWML</OwmlDir>
+    <ModUniqueName>xen.ThirdPersonCamera</ModUniqueName>
   </PropertyGroup>
 </Project>
