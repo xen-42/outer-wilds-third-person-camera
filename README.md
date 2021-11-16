@@ -1,4 +1,4 @@
-# Outer Wilds Mod Template
+# Outer Wilds Third Person Camera
 
 Scroll in/out to zoom in/out.
 
