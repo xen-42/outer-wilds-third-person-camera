@@ -6,6 +6,8 @@ Scroll in/out to zoom in/out.
 
 Current issues:
 
-I have it bring you back to first person currently when using tools. This includes artifacts/lanterns/scrolls/etc and I'd rather those work in 3rd person.
-The player can see ghost matter in 3rd person
-Probes are invisible in 3rd person
+- I have it bring you back to first person currently when using tools. This includes artifacts/lanterns/scrolls/etc and I'd rather those work in 3rd person.
+
+- The player can see ghost matter in 3rd person.
+
+- Probes are invisible in 3rd person.
