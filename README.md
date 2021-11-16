@@ -17,3 +17,5 @@ Current issues:
 - Probes are invisible in 3rd person.
 
 - Haven't tried it yet but I bet the statue gets weird
+
+- Should probably remove the crosshair eh
