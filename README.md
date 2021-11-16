@@ -10,6 +10,10 @@ Current issues:
 
 - I have it bring you back to first person currently when using tools. This includes artifacts/lanterns/scrolls/etc and I'd rather those work in 3rd person.
 
+- Waking up on the stranger puts you in first person even though you're holding a tool
+
 - The player can see ghost matter in 3rd person.
 
 - Probes are invisible in 3rd person.
+
+- Haven't tried it yet but I bet the statue gets weird
