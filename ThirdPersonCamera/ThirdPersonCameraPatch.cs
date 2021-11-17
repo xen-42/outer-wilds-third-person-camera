@@ -3,22 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace ThirdPersonCamera
 {
     class ThirdPersonCameraPatch
     {
-        public static void EquipTool()
+        public static void EquipTool(PlayerTool __instance)
+        {
+            GlobalMessenger<Type>.FireEvent("OnEquipTool", __instance.GetType());
+        }
+
+        public static void UnequipTool(PlayerTool __instance)
+        {
+            GlobalMessenger<Type>.FireEvent("OnUnequipTool", __instance.GetType());
+        }
+
+        public static void CloseEyes()
         {
             GlobalMessenger.FireEvent("DisableThirdPersonCamera");
         }
 
-        public static void UnequipTool()
+        public static void OpenEyes(PlayerCameraEffectController __instance, float animDuration, AnimationCurve wakeCurve)
         {
             GlobalMessenger.FireEvent("EnableThirdPersonCamera");
         }
 
-        public static void WakeUp()
+        public static void OnFinishOpenEyes()
         {
             GlobalMessenger.FireEvent("EnableThirdPersonCamera");
         }

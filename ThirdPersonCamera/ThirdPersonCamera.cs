@@ -20,8 +20,8 @@ namespace ThirdPersonCamera
         private float desiredDistance = 0f;
 
         private const float MIN_PLAYER_DISTANCE = 1.0f;
-        private const float DEFAULT_PLAYER_DISTANCE = 2.0f;
-        private const float MAX_PLAYER_DISTANCE = 4.0f;
+        private const float DEFAULT_PLAYER_DISTANCE = 3.5f;
+        private const float MAX_PLAYER_DISTANCE = 5.0f;
 
         private const float MIN_SHIP_DISTANCE = 10f;
         private const float DEFAULT_SHIP_DISTANCE = 25f;
@@ -34,8 +34,7 @@ namespace ThirdPersonCamera
         private bool camera_enabled = false;
         private bool camera_active = false;
 
-        private const float BLINK_TIME = 1f;
-        private bool firstLoop = true;
+        private bool holdingTool = false;
 
         private void Awake()
         {
@@ -48,10 +47,10 @@ namespace ThirdPersonCamera
         {
             ModHelper.Console.WriteLine($"{nameof(ThirdPersonCamera)} is loaded!", MessageType.Success);
 
-            // Need to create the camera immediately or the skybox breaks
+            // Need to create the camera immediately or the skybox breaks?
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            // This happens when the player first wakes up, so we use it to set most stuff up
+            // This happens when the player first appears, so we use it to set most stuff up
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
             ModHelper.Events.Event += OnEvent;
 
@@ -66,22 +65,31 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("EnterShipComputer", new Callback(() => DisableCamera()));
             GlobalMessenger.AddListener("ExitShipComputer", new Callback(() => EnableCamera()));
 
-            GlobalMessenger<bool>.AddListener("StartSleepingAtCampfire", new Callback<bool>((_) => DisableCamera()));
-            GlobalMessenger.AddListener("StopSleepingAtCampfire", new Callback(() => EnableCamera()));
+            //GlobalMessenger<bool>.AddListener("StartSleepingAtCampfire", new Callback<bool>((_) => DisableCamera()));
+            //GlobalMessenger.AddListener("StopSleepingAtCampfire", new Callback(() => EnableCamera()));
 
             GlobalMessenger.AddListener("EnterMapView", new Callback(() => DisableCamera()));
             GlobalMessenger.AddListener("ExitMapView", new Callback(() => EnableCamera()));
 
             GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>((_) => DisableCamera()));
+            GlobalMessenger.AddListener("TriggerMemoryUplink", new Callback(() => DisableCamera()));
+            
 
             // Some custom events
             GlobalMessenger.AddListener("DisableThirdPersonCamera", new Callback(() => DisableCamera()));
             GlobalMessenger.AddListener("EnableThirdPersonCamera", new Callback(() => EnableCamera()));
 
+            GlobalMessenger<Type>.AddListener("OnEquipTool", new Callback<Type>((Type t) => OnToolEquipChange(t, true)));
+            GlobalMessenger<Type>.AddListener("OnUnequipTool", new Callback<Type>((Type t) => OnToolEquipChange(t, false)));
+
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("EquipTool", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.EquipTool));
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("UnequipTool", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.UnequipTool));
-            ModHelper.HarmonyHelper.AddPostfix<PlayerCameraEffectController>("WakeUp", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.WakeUp));
-
+            
+            // OpenEyes doesn't work?
+            //ModHelper.HarmonyHelper.AddPrefix<PlayerCameraEffectController>("OpenEyes", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.OpenEyes));
+            ModHelper.HarmonyHelper.AddPrefix<StreamingGroup>("OnFinishOpenEyes", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.OnFinishOpenEyes));
+            ModHelper.HarmonyHelper.AddPrefix<PlayerCameraEffectController>("CloseEyes", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.CloseEyes));
+            
             /*
             GlobalMessenger.AddListener("LockMovement", new Callback(() => OnMovementLockChanged(true)));
             GlobalMessenger.AddListener("UnlockMovement", new Callback(() => OnMovementLockChanged(false)));
@@ -89,6 +97,33 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<PlayerCharacterController>("LockMovement", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.LockMovement));
             ModHelper.HarmonyHelper.AddPostfix<PlayerCharacterController>("UnlockMovement", typeof(ThirdPersonCameraPatch), nameof(ThirdPersonCameraPatch.UnlockMovement));
             */
+        }
+
+        private void OnToolEquipChange(Type t, bool equiped)
+        {
+            ModHelper.Console.WriteLine($"Picked up: {t.Name}", MessageType.Info);
+
+            if (t.Name == "ItemTool")
+            {
+                try
+                {
+                    GameObject tool = Locator.GetPlayerBody().GetComponentInChildren<ItemTool>().gameObject;
+                    ModHelper.Console.WriteLine($"{tool.name}", MessageType.Info);
+                    tool.transform.localScale = new Vector3(2,2,2);
+                    ModHelper.Console.WriteLine($"{tool.layer}", MessageType.Info);
+                    ModHelper.Console.WriteLine($"{tool.transform.position}", MessageType.Info);
+                }
+                catch(Exception e)
+                {
+                    ModHelper.Console.WriteLine($"Couldn't find player tool", MessageType.Warning);
+                }
+            }
+            else
+            {
+                holdingTool = equiped;
+                if (equiped) DisableCamera();
+                else EnableCamera();
+            }
         }
 
         private void OnMovementLockChanged(bool locked)
@@ -140,8 +175,9 @@ namespace ThirdPersonCamera
             _OWCamera = _thirdPersonCamera.AddComponent<OWCamera>();
             _OWCamera.renderSkybox = true;
 
-            firstLoop = true;
             desiredDistance = DEFAULT_PLAYER_DISTANCE;
+
+            holdingTool = false;
         }
 
         private void SetUpCamera()
@@ -187,13 +223,8 @@ namespace ThirdPersonCamera
 
         private void EnableCamera()
         {
-            if (firstLoop)
-            {
-                ModHelper.Console.WriteLine($"First loop, let them blink before allowing 3rd person", MessageType.Debug);
-                firstLoop = false;
-                Invoke("EnableCamera", BLINK_TIME);
-                return;
-            }
+            // Check that they should be allowed
+            if (holdingTool) return;
 
             ModHelper.Console.WriteLine($"Third person camera enabled", MessageType.Debug);
 
@@ -255,67 +286,76 @@ namespace ThirdPersonCamera
         {
             if (!camera_enabled) return;
 
-            float scroll = -Mouse.current.scroll.ReadValue().y;
-
-            // Toggle
-            if(Keyboard.current[Key.V].wasReleasedThisFrame)
+            try
             {
-                if (camera_active)
+                float scroll = -Mouse.current.scroll.ReadValue().y;
+
+                // Toggle
+                if(Keyboard.current[Key.V].wasReleasedThisFrame || Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame)
                 {
-                    DeactivateCamera();
-                }
-                else
-                {
-                    ActivateCamera();
-                }
-            }
-
-            if(camera_active)
-            {
-                if (Locator.GetDeathManager().IsPlayerDying()) DisableCamera();
-
-                float maxDistance = pilotingShip ? MAX_SHIP_DISTANCE : MAX_PLAYER_DISTANCE;
-                float minDistance = pilotingShip ? MIN_SHIP_DISTANCE : MIN_PLAYER_DISTANCE;
-
-                // If we change the direction we're scrolling
-                if (scroll * (distance - desiredDistance) > 0) desiredDistance = distance;
-
-                // Apply scrolling to distance
-                desiredDistance = Mathf.Clamp(desiredDistance + scroll * Time.deltaTime, minDistance, maxDistance);
-
-                // Increment the distance towards the desired distance
-                if (distance != desiredDistance)
-                {
-                    //ModHelper.Console.WriteLine($"Zooming from {distance} to {desiredDistance}", MessageType.Debug);
-                    float sign = distance < desiredDistance ? 1 : -1;
-                    float camera_speed = CAMERA_SPEED * (pilotingShip ? 2.5f : 1);
-                    distance = Mathf.Clamp(distance + sign * camera_speed * Time.deltaTime, 0f, maxDistance);
-                    // Did we overshoot?
-                    if ((distance < desiredDistance && sign == -1) || (distance > desiredDistance && sign == 1))
+                    if (camera_active)
                     {
-                        distance = desiredDistance;
+                        DeactivateCamera();
+                    }
+                    else
+                    {
+                        ActivateCamera();
                     }
                 }
 
-                // For raycasting and also moving the camera
-                Vector3 origin = Locator.GetPlayerCamera().transform.position;
-                if (pilotingShip) origin = Locator.GetShipTransform().position + 10f * Locator.GetShipTransform().TransformDirection(Vector3.up);
-
-                Vector3 direction = _thirdPersonCamera.transform.parent.transform.TransformDirection(Vector3.back);
-
-                // When piloting we temporarily disable the raycast collision for the ship
-                if (pilotingShip) Locator.GetShipBody().DisableCollisionDetection();
-                if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, desiredDistance))
+                if(camera_active)
                 {
-                    distance = Mathf.Clamp(distance, 0f, hitInfo.distance);
+                    if (Locator.GetDeathManager().IsPlayerDying()) DisableCamera();
+
+                    float maxDistance = pilotingShip ? MAX_SHIP_DISTANCE : MAX_PLAYER_DISTANCE;
+                    float minDistance = pilotingShip ? MIN_SHIP_DISTANCE : MIN_PLAYER_DISTANCE;
+
+                    // If we change the direction we're scrolling
+                    if (scroll * (distance - desiredDistance) > 0) desiredDistance = distance;
+
+                    // Apply scrolling to distance
+                    desiredDistance = Mathf.Clamp(desiredDistance + scroll * Time.deltaTime, minDistance, maxDistance);
+
+                    // Increment the distance towards the desired distance
+                    if (distance != desiredDistance)
+                    {
+                        //ModHelper.Console.WriteLine($"Zooming from {distance} to {desiredDistance}", MessageType.Debug);
+                        float sign = distance < desiredDistance ? 1 : -1;
+                        float camera_speed = CAMERA_SPEED * (pilotingShip ? 2.5f : 1);
+                        distance = Mathf.Clamp(distance + sign * camera_speed * Time.deltaTime, 0f, maxDistance);
+                        // Did we overshoot?
+                        if ((distance < desiredDistance && sign == -1) || (distance > desiredDistance && sign == 1))
+                        {
+                            distance = desiredDistance;
+                        }
+                    }
+
+                    // For raycasting and also moving the camera
+                    Vector3 origin = Locator.GetPlayerCamera().transform.position;
+                    if (pilotingShip) origin = Locator.GetShipTransform().position + 10f * Locator.GetShipTransform().TransformDirection(Vector3.up);
+
+                    Vector3 direction = _thirdPersonCamera.transform.parent.transform.TransformDirection(Vector3.back);
+
+                    // When piloting we temporarily disable the raycast collision for the ship
+                    if (pilotingShip) Locator.GetShipBody().DisableCollisionDetection();
+                    if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, desiredDistance))
+                    {
+                        distance = Mathf.Clamp(distance, 0f, hitInfo.distance) * 0.9f; // Try to avoid seeing through curved walls
+                    }
+                    if (pilotingShip) Locator.GetShipBody().EnableCollisionDetection();
+
+                    // Stop the camera going into your head even if it's inside a wall
+                    if (distance < minDistance) distance = minDistance;
+
+                    // Finally, move the camera into place
+                    _thirdPersonCamera.transform.position = origin + direction * distance;
                 }
-                if (pilotingShip) Locator.GetShipBody().EnableCollisionDetection();
-
-                // Stop the camera going into your head even if it's inside a wall
-                if (distance < minDistance) distance = minDistance;
-
-                // Finally, move the camera into place
-                _thirdPersonCamera.transform.position = origin + direction * distance;
+            }
+            catch(Exception e)
+            {
+                // What happened?
+                ModHelper.Console.WriteLine($"Something went wrong in update: {e.Message}. {e.StackTrace}.", MessageType.Error);
+                camera_enabled = false;
             }
         }
     }
