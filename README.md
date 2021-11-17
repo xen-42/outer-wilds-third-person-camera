@@ -8,14 +8,14 @@ Scroll in/out to zoom in/out.
 
 Current issues:
 
-- I have it bring you back to first person currently when using tools. This includes artifacts/lanterns/scrolls/etc and I'd rather those work in 3rd person.
+- Artifacts appear ontop of you
 
-- Waking up on the stranger puts you in first person even though you're holding a tool
+- Stranger dreams don't do the thing when you do the one thing
 
 - The player can see ghost matter in 3rd person.
 
 - Probes are invisible in 3rd person.
 
-- Haven't tried it yet but I bet the statue gets weird
+- Statue doesn't re-enable 3rd person after uplink
 
 - Should probably remove the crosshair eh
