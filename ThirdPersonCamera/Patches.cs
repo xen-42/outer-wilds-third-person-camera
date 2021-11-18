@@ -36,8 +36,13 @@ namespace ThirdPersonCamera
 
         public static void OnExitLanternBounds()
         {
-            // Makes it apply the simulation camera to the third person camera idk why
             GlobalMessenger.FireEvent("DisableThirdPersonCamera");
+            //GlobalMessenger.FireEvent("EnableThirdPersonCamera");
+        }
+
+        public static void OnEnterLanternBounds()
+        {
+            //GlobalMessenger.FireEvent("DisableThirdPersonCamera");
             GlobalMessenger.FireEvent("EnableThirdPersonCamera");
         }
 
@@ -49,6 +54,31 @@ namespace ThirdPersonCamera
         public static void OnFinishGrapple()
         {
             GlobalMessenger.FireEvent("EnableThirdPersonCamera");
+        }
+
+        public static void OnRetrieveProbe()
+        {
+            GlobalMessenger.FireEvent("OnRetrieveProbe");
+        }
+
+        public static void OnProjectionComplete()
+        {
+            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
+        }
+
+        public static void OnProjectionStart()
+        {
+            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
+        }
+
+        public static void OnTriggerVolumeExit()
+        {
+            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
+        }
+
+        public static void OnDetach(ShipDetachableModule __instance)
+        {
+            GlobalMessenger<ShipDetachableModule>.FireEvent("ShipModuleDetached", __instance);
         }
     }
 }
