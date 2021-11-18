@@ -295,7 +295,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DreamWorldManager.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="ThirdPersonCamera.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

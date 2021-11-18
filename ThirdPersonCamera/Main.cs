@@ -15,14 +15,12 @@ namespace ThirdPersonCamera
         private bool afterMemoryUplink = false;
 
         public ThirdPersonCamera ThirdPersonCamera { get; private set; }
-        public DreamWorldManager DreamWorldManager { get; private set; }
 
         private void Start()
         {
             WriteSuccess($"{nameof(ThirdPersonCamera)} is loaded!");
 
             ThirdPersonCamera = new ThirdPersonCamera(this);
-            DreamWorldManager = new DreamWorldManager(this);
 
             // Patches
             ModHelper.HarmonyHelper.AddPostfix<StreamingGroup>("OnFinishOpenEyes", typeof(Patches), nameof(Patches.OnFinishOpenEyes));
@@ -56,7 +54,6 @@ namespace ThirdPersonCamera
             ModHelper.Events.Event -= OnEvent;
 
             ThirdPersonCamera.OnDestroy();
-            DreamWorldManager.OnDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -90,7 +87,6 @@ namespace ThirdPersonCamera
                 try
                 {
                     ThirdPersonCamera.Init();
-                    DreamWorldManager.Init();
                     loaded = true;
 
                     if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
