@@ -7,10 +7,11 @@ Press V or the left directional button to toggle between 1st and 3rd person.
 Scroll in/out to zoom in/out.
 
 TODO:
-- Helmet HUD doesnt update in 3rd person (disabled for now)
+- SignalScope and map HUD don't work with helmet on
 - Add HUD markers in 3rd person
 - Add translator text to screen in 3rd person
 - Add ship navigation text to screen in 3rd person
+- When deactivating third person while in landing mode things get weird
 
 Wishlist (would be nice):
 - Remove crosshair
