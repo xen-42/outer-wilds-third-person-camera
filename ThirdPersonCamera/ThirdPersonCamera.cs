@@ -42,6 +42,8 @@ namespace ThirdPersonCamera
         private bool _resetArmLayerNextTick = false;
         private bool _changeToolMaterialNextTick = false;
 
+        private bool isRoastingMarshmallow = false;
+
         private bool _ejected = false;
 
         // Things to disappear
@@ -68,7 +70,7 @@ namespace ThirdPersonCamera
 
             // Go back to first person on certain actions
             GlobalMessenger<Campfire>.AddListener("EnterRoastingMode", new Callback<Campfire>(DisableCameraOnRoasting));
-            GlobalMessenger.AddListener("ExitRoastingMode", new Callback(EnableCamera));
+            GlobalMessenger.AddListener("ExitRoastingMode", new Callback(OnExitRoastingMode));
 
             GlobalMessenger.AddListener("EnterShipComputer", new Callback(DisableCamera));
             GlobalMessenger.AddListener("ExitShipComputer", new Callback(EnableCamera));
@@ -85,15 +87,22 @@ namespace ThirdPersonCamera
 
             //GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", OnSwitchActiveCamera);
 
+            GlobalMessenger.AddListener("StartViewingProjector", new Callback(DisableCamera));
+            GlobalMessenger.AddListener("EndViewingProjector", new Callback(EnableCamera));
+
             // Some custom events
             GlobalMessenger.AddListener("DisableThirdPersonCamera", new Callback(DisableCamera));
             GlobalMessenger.AddListener("EnableThirdPersonCamera", new Callback(EnableCamera));
             GlobalMessenger.AddListener("OnRetrieveProbe", new Callback(SetToolMaterials));
             GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
+            GlobalMessenger.AddListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
 
             // Different behaviour for certain tools
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
+
+            // GUI
+            GlobalMessenger.AddListener("ChangeGUIMode", new Callback(this.OnChangeGUIMode));
 
             parent.WriteSuccess("Done creating ThirdPersonCamera");
         }
@@ -118,8 +127,15 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("EnableThirdPersonCamera", new Callback(EnableCamera));
             GlobalMessenger.RemoveListener("OnRetrieveProbe", new Callback(SetToolMaterials));
             GlobalMessenger<ShipDetachableModule>.RemoveListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
+            GlobalMessenger.RemoveListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
+
+            GlobalMessenger.RemoveListener("StartViewingProjector", new Callback(DisableCamera));
+            GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
+
+            GlobalMessenger.RemoveListener("ChangeGUIMode", new Callback(this.OnChangeGUIMode));
+
 
             parent.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
@@ -282,12 +298,18 @@ namespace ThirdPersonCamera
                 // Have to keep their relative order
                 if (thirdPerson)
                 {
-                    if (meshRenderer.material.renderQueue >= 2000) meshRenderer.material.renderQueue -= 2000;
-                    parent.WriteInfo($"{meshRenderer.material.renderQueue}, {meshRenderer.material.shader}");
+                    foreach(Material m in meshRenderer.materials)
+                    {
+                        if (m.renderQueue >= 2000) m.renderQueue -= 2000;
+                        //parent.WriteInfo($"{m.renderQueue}, {m.shader.name}, {m.shader.renderQueue}");
+                    }
                 }
                 else
                 {
-                    if (meshRenderer.material.renderQueue < 2000) meshRenderer.material.renderQueue += 2000;
+                    foreach (Material m in meshRenderer.materials)
+                    {
+                        if (m.renderQueue < 2000) m.renderQueue += 2000;
+                    }
                 }
             }
         }
@@ -328,9 +350,29 @@ namespace ThirdPersonCamera
             }
         }
 
+        private void OnRoastingStickActivate()
+        {
+            // Put the stick back to normal
+            GameObject.Find("Stick_Root").transform.localScale = new Vector3(1, 1, 1);
+        }
+
+        private void OnExitRoastingMode()
+        {
+            isRoastingMarshmallow = false;
+            EnableCamera();
+
+            GameObject.Find("Stick_Root").transform.localScale = new Vector3(0, 0, 0);
+        }
+
+        private void OnChangeGUIMode()
+        {
+            parent.WriteInfo($"Gui mode changed. HUD Markers visible {GUIMode.AreHUDMarkersVisible()}. {GUIMode.IsFPSMode()}");
+        }
+
         public void EnableCamera()
         {
             if (CameraEnabled) return;
+            if (isRoastingMarshmallow) return;
 
             parent.WriteInfo($"Third person camera enabled");
 
@@ -345,6 +387,7 @@ namespace ThirdPersonCamera
 
         private void DisableCameraOnRoasting(Campfire _f)
         {
+            isRoastingMarshmallow = true;
             DisableCamera();
         }
 
@@ -415,7 +458,9 @@ namespace ThirdPersonCamera
             _distance = 0f;
 
             ModifyHelmetHUD(true);
-            SetArmVisibility(_heldTool != null);
+            // Double check that theyre holding thing and ya
+            if (_heldTool != null && !_heldTool.IsEquipped()) _heldTool = null;
+            SetArmVisibility(_heldTool == null);
             SetToolRenderQueue(_heldTool);
         }
 
@@ -454,8 +499,13 @@ namespace ThirdPersonCamera
 
             float scroll = -Mouse.current.scroll.ReadValue().y;
 
+            // If a keyboard/gamepad aren't plugged in then these are null
+            bool toggle = false;
+            if (Keyboard.current != null) toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
+            if (Gamepad.current != null) toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
+
             // Toggle
-            if(Keyboard.current[Key.V].wasReleasedThisFrame || Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame)
+            if (toggle)
             {
                 if (CameraActive)
                 {

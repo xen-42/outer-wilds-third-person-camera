@@ -41,6 +41,8 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("StartZoomIn", typeof(Patches), nameof(Patches.OnStartGrapple));
             ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("FinishRetroZoom", typeof(Patches), nameof(Patches.OnFinishGrapple));
 
+            ModHelper.HarmonyHelper.AddPostfix<RoastingStickController>("OnEnterRoastingMode", typeof(Patches), nameof(Patches.OnRoastingStickActivate));
+
             // Attach onto two events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
 

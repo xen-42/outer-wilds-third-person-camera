@@ -80,5 +80,10 @@ namespace ThirdPersonCamera
         {
             GlobalMessenger<ShipDetachableModule>.FireEvent("ShipModuleDetached", __instance);
         }
+
+        public static void OnRoastingStickActivate()
+        {
+            GlobalMessenger.FireEvent("OnRoastingStickActivate");
+        }
     }
 }
