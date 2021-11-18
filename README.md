@@ -6,26 +6,15 @@ Press V or the left directional button to toggle between 1st and 3rd person.
 
 Scroll in/out to zoom in/out.
 
-v0.1.2
-- Probes now visible in 3rd person
-- Ghost matter no longer visible in 3rd person
-- Fixed errors caused by the mod still trying to move the camera after quitting the game
-- Made more things force 1st person
-
-Issues:
-- ProbeLauncher and Artifact appear on top of you
-- Helmet HUD doesnt update in 3rd person (disabled for now)
-- Statue doesn't re-enable 3rd person after uplink
-- Stranger dreams don't do the thing when you do the one thing
-- Ship target lock-on breaks sometimes
-
 TODO:
-- Remove crosshair
+- Artifact appears on top of you
+- Helmet HUD doesnt update in 3rd person (disabled for now)
 - Add HUD markers in 3rd person
-- Add dream player model
 
-Wishlist:
+Wishlist (would be nice):
+- Remove crosshair
 - Add translator text to screen in 3rd person
 - Add ship navigation text to screen in 3rd person
 - Free rotate camera 360 and with player camera (not just ship).
 - Actually catch fire in fires
+- Allow 3rd person in the dream (need a new player model)
