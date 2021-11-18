@@ -6,27 +6,26 @@ Press V or the left directional button to toggle between 1st and 3rd person.
 
 Scroll in/out to zoom in/out.
 
-Current issues:
+v0.1.2
+- Probes now visible in 3rd person
+- Ghost matter no longer visible in 3rd person
+- Fixed errors caused by the mod still trying to move the camera after quitting the game
+- Made more things force 1st person
 
-- Artifacts appear ontop of you. (Replace it with my own gameobject?)
-- Probes are invisible in 3rd person. (Replace with a new gameobject?)
-- The player can see ghost matter in 3rd person. (I know how to fix it but it makes your head disappear).
+Issues:
+- ProbeLauncher and Artifact appear on top of you
+- Helmet HUD doesnt update in 3rd person (disabled for now)
 - Statue doesn't re-enable 3rd person after uplink
 - Stranger dreams don't do the thing when you do the one thing
-- Everything breaks horribly if you try to switch profiles
 - Ship target lock-on breaks sometimes
 
 TODO:
-
-- Add deconstructor?
 - Remove crosshair
-- Add helmet and ship console GUI to camera screen
+- Add HUD markers in 3rd person
 - Add dream player model
-- Should go first person when: Interacting with grabby things; Interacting with grabby guys 
-- Do the wake up particle effects when waking up in the stranger.
-
 
 Wishlist:
-- Make tools work in 3rd person (ProbeLauncher needs UI, SignalScope needs model and better zoom/aiming (over the shoulder?), Translator needs model and scan effect and text on screen).
+- Add translator text to screen in 3rd person
+- Add ship navigation text to screen in 3rd person
 - Free rotate camera 360 and with player camera (not just ship).
 - Actually catch fire in fires
