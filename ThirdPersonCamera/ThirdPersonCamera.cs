@@ -20,7 +20,7 @@ namespace ThirdPersonCamera
         private float _distance = 0f;
         private float _desiredDistance = 0f;
 
-        private const float MIN_PLAYER_DISTANCE = 1.0f;
+        private const float MIN_PLAYER_DISTANCE = 1.5f;
         private const float DEFAULT_PLAYER_DISTANCE = 3.5f;
         private const float MAX_PLAYER_DISTANCE = 5.0f;
 
@@ -503,7 +503,7 @@ namespace ThirdPersonCamera
                 // When piloting we temporarily disable the raycast collision for the ship
                 if (_pilotingShip) Locator.GetShipBody().DisableCollisionDetection();
                 else Locator.GetPlayerBody().DisableCollisionDetection();
-                if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, _desiredDistance))
+                if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, _desiredDistance, ~(1<<2)))
                 {
                     _distance = Mathf.Clamp(_distance, 0f, hitInfo.distance) * 0.9f; // Try to avoid seeing through curved walls
                 }
