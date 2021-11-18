@@ -3,6 +3,6 @@
   "author": "xen",
   "name": "Third Person Camera",
   "uniqueName": "xen.ThirdPersonCamera",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "owmlVersion": "2.1.0"
 }
