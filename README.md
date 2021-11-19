@@ -14,3 +14,5 @@ Wishlist (would be nice):
 - Free rotate camera 360 and with player camera (not just ship).
 - Actually catch fire in fires
 - Allow 3rd person in the dream (need a new player model)
+
+![image](https://user-images.githubusercontent.com/22628069/142536103-386cda90-2d35-4c95-8e98-05e7ab2081cc.png)
