@@ -2,23 +2,16 @@
 
 ![3rd person](https://user-images.githubusercontent.com/22628069/142057019-e2dcca28-6838-4b94-b45a-29843d44ab62.png)
 
-Press V or the left directional button to toggle between 1st and 3rd person.
+Press V or the left directional button (Gamepad) to toggle between 1st and 3rd person.
 
 Scroll in/out to zoom in/out.
 
 TODO:
 - SignalScope frequency and map HUD don't work with helmet on
 - Add lock-on UI in 3rd person
-- Make code not be spaghetti
 
 Known issues:
-- Putting a scroll into a wall doesn't count as unequiping it (materials aren't reset)
-- Nomai tapes don't read in 3rd person
-- Translator text appears on screen even in first person
-- Raycast collides with inivisble walls sometimes
-- Toggling camera mode while moving Nomai orbs is broken
-- Translator text has really weird spacing
-- Reticule is invisible while flying the ship
+- NomaiAudioVolume's leave their last message on screen when you go to translate something else.
 
 Wishlist (would be nice):
 - Free rotate camera 360 and with player camera (not just ship).
