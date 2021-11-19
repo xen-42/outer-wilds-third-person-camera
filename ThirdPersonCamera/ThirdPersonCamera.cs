@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.PostProcessing;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using System;
 using System.Linq;
 
@@ -12,7 +13,7 @@ namespace ThirdPersonCamera
     public class ThirdPersonCamera
     {
         private static GameObject _thirdPersonCamera;
-        private static Camera _camera;
+        private static Camera  _camera;
         private OWCamera _OWCamera;
 
         private static bool _pilotingShip = false;
@@ -45,6 +46,8 @@ namespace ThirdPersonCamera
         private bool isRoastingMarshmallow = false;
 
         private bool _ejected = false;
+
+        private bool cameraModeLocked = false;
 
         // Things to disappear
         private string[] helmetGUI = {
@@ -102,7 +105,11 @@ namespace ThirdPersonCamera
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
 
             // GUI
-            GlobalMessenger.AddListener("ChangeGUIMode", new Callback(this.OnChangeGUIMode));
+            GlobalMessenger.AddListener("PutOnHelmet", new Callback(OnPutOnHelmet));
+            GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
+
+            GlobalMessenger.AddListener("EnterLandingView", new Callback(this.OnEnterLandingView));
+            GlobalMessenger.AddListener("ExitLandingView", new Callback(this.OnExitLandingView));
 
             parent.WriteSuccess("Done creating ThirdPersonCamera");
         }
@@ -134,8 +141,11 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("StartViewingProjector", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
 
-            GlobalMessenger.RemoveListener("ChangeGUIMode", new Callback(this.OnChangeGUIMode));
+            GlobalMessenger.RemoveListener("PutOnHelmet", new Callback(OnPutOnHelmet));
+            GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
 
+            GlobalMessenger.RemoveListener("EnterLandingView", new Callback(this.OnEnterLandingView));
+            GlobalMessenger.RemoveListener("ExitLandingView", new Callback(this.OnExitLandingView));
 
             parent.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
@@ -149,13 +159,6 @@ namespace ThirdPersonCamera
             _thirdPersonCamera.SetActive(false);
 
             _camera = _thirdPersonCamera.AddComponent<Camera>();
-            _camera.clearFlags = CameraClearFlags.Color;
-            _camera.backgroundColor = Color.black;
-            _camera.fieldOfView = 80f;
-            _camera.nearClipPlane = 0.1f;
-            _camera.farClipPlane = 40000f;
-            _camera.depth = 0f;
-
             _camera.enabled = false;
 
             _OWCamera = _thirdPersonCamera.AddComponent<OWCamera>();
@@ -170,7 +173,7 @@ namespace ThirdPersonCamera
 
             _thirdPersonCamera.transform.position = Locator.GetPlayerTransform().position;
 
-            // Crashes without this idk
+            // Crashes without this idk stole it from Nebulas FreeCam
             FlashbackScreenGrabImageEffect temp = _thirdPersonCamera.AddComponent<FlashbackScreenGrabImageEffect>();
             temp._downsampleShader = Locator.GetPlayerCamera().gameObject.GetComponent<FlashbackScreenGrabImageEffect>()._downsampleShader;
 
@@ -181,7 +184,7 @@ namespace ThirdPersonCamera
             _postProcessiong.profile = Locator.GetPlayerCamera().gameObject.GetAddComponent<PostProcessingBehaviour>().profile;
 
             _thirdPersonCamera.SetActive(true);
-            _camera.cullingMask = Locator.GetPlayerCamera().mainCamera.cullingMask;
+            _camera.CopyFrom(Locator.GetPlayerCamera().mainCamera);
 
             _thirdPersonCamera.transform.parent = Locator.GetPlayerCamera().transform;
             _thirdPersonCamera.transform.position = Locator.GetPlayerCamera().transform.position;
@@ -196,6 +199,16 @@ namespace ThirdPersonCamera
             HUDparent = GameObject.Find("Helmet").transform.parent;
         }
 
+        private void OnEnterLandingView()
+        {
+            cameraModeLocked = true;
+        }
+
+        private void OnExitLandingView()
+        {
+            cameraModeLocked = false;
+        }
+
         private void OnShipModuleDetached(ShipDetachableModule module)
         {
             parent.WriteInfo($"{module.name} was ejected");
@@ -205,6 +218,13 @@ namespace ThirdPersonCamera
         private void OnToolEquiped(PlayerTool tool)
         {
             parent.WriteInfo($"Picked up: {tool.name}, {tool.GetType().Name}, {tool.gameObject.layer}");
+
+            // Can't use tools in third person when flying
+            if (_pilotingShip)
+            {
+                DisableCamera();
+                return;
+            }
 
             _heldTool = tool;
 
@@ -236,6 +256,12 @@ namespace ThirdPersonCamera
 
         private void OnToolUnequiped(PlayerTool tool)
         {
+            if (_pilotingShip)
+            {
+                EnableCamera();
+                return;
+            }
+
             parent.WriteInfo($"Dropped tool");
             _heldTool = null;
             SetArmVisibility(true);
@@ -262,6 +288,13 @@ namespace ThirdPersonCamera
             float maxDistance = piloting ? MAX_SHIP_DISTANCE : MAX_PLAYER_DISTANCE;
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
             _desiredDistance = _pilotingShip ? DEFAULT_SHIP_DISTANCE : DEFAULT_PLAYER_DISTANCE;
+
+            if (piloting)
+            {
+                ModifyHelmetHUD(false);
+            }
+
+            parent.ScreenText.ShowShipOverlay(piloting && CameraEnabled && CameraActive);
         }
 
         private void SetToolRenderQueue(PlayerTool tool)
@@ -314,25 +347,29 @@ namespace ThirdPersonCamera
             }
         }
 
-        private void ModifyHelmetHUD(bool visible)
+        private void ModifyHelmetHUD(bool showHud)
         {
-            // Disappear things
-            foreach(string s in helmetGUI)
+            parent.WriteInfo($"Now {(showHud ? "showing" : "hiding")} the hud");
+            parent.WriteInfo($"{_pilotingShip}, {Locator.GetPlayerSuit().IsWearingSuit()}");
+            // Change the HUD
+            if (Locator.GetPlayerSuit().IsWearingHelmet() || (_pilotingShip && Locator.GetPlayerSuit().IsWearingSuit()))
             {
-                GameObject go = GameObject.Find(s);
-                if (go == null) parent.WriteError($"Couldn't find {s}");
-                else go.transform.localScale = visible ? new Vector3(1, 1, 1) : new Vector3(0, 0, 0);
+                Canvas UICanvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas").GetComponent<Canvas>();
+                UICanvas.renderMode = !showHud ? RenderMode.ScreenSpaceCamera : RenderMode.ScreenSpaceOverlay;
+            }
+            else
+            {
+                foreach (Canvas canvas in GameObject.Find("PlayerHUD/HelmetOffUI").GetComponentsInChildren<Canvas>())
+                {
+                    canvas.worldCamera = !showHud ? Locator.GetPlayerCamera().mainCamera : _camera;
+                }
             }
 
-            // Reparent the rest of the GUI to the 3rd person camera
-            // Unity preserves the global position not local when reparenting
-            GameObject helmet = GameObject.Find("Helmet");
-            Vector3 localPosition = helmet.transform.localPosition;
-            helmet.transform.SetParent(visible ? HUDparent : _camera.transform);
-            helmet.transform.localPosition = localPosition;
+            bool firstPerson = !(CameraEnabled && CameraActive);
 
-            // TEMPORARY just erase it all
-            helmet.transform.localScale = visible ? new Vector3(1, 1, 1) : new Vector3(0, 0, 0);
+            // Get rid of 2D helmet stuff
+            GameObject helmet = GameObject.Find("Helmet");
+            helmet.transform.localScale = firstPerson ? new Vector3(1, 1, 1) : new Vector3(0, 0, 0);
 
             // The head
             if (!Locator.GetPlayerSuit().IsWearingHelmet())
@@ -341,11 +378,11 @@ namespace ThirdPersonCamera
                 {
                     GameObject head = GameObject.Find("player_mesh_noSuit:Player_Head");
                     if (head.layer != 0) head.layer = 0;
-                    head.transform.localScale = visible ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+                    head.transform.localScale = firstPerson ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
                 }
                 catch (Exception)
                 {
-                    parent.WriteError("Couldn't find the player's head");
+                    parent.WriteWarning("Couldn't find the player's head");
                 }
             }
         }
@@ -353,7 +390,9 @@ namespace ThirdPersonCamera
         private void OnRoastingStickActivate()
         {
             // Put the stick back to normal
-            GameObject.Find("Stick_Root").transform.localScale = new Vector3(1, 1, 1);
+            GameObject stick = GameObject.Find("Stick_Root");
+            if (stick != null) stick.transform.localScale = new Vector3(1, 1, 1);
+            else parent.WriteWarning("Can't find stick");
         }
 
         private void OnExitRoastingMode()
@@ -361,12 +400,34 @@ namespace ThirdPersonCamera
             isRoastingMarshmallow = false;
             EnableCamera();
 
-            GameObject.Find("Stick_Root").transform.localScale = new Vector3(0, 0, 0);
+            GameObject stick = GameObject.Find("Stick_Root");
+            if (stick != null) stick.transform.localScale = new Vector3(0, 0, 0);
+            else parent.WriteWarning("Can't find stick");
         }
 
-        private void OnChangeGUIMode()
+        private void SetLockOn(bool thirdPerson)
         {
-            parent.WriteInfo($"Gui mode changed. HUD Markers visible {GUIMode.AreHUDMarkersVisible()}. {GUIMode.IsFPSMode()}");
+            /*
+            string[] strings = { "MapLockOnCanvas", "CockpitLockOnCanvas", "MarkerManager" };
+            foreach(string s in strings)
+            {
+                Canvas c = GameObject.Find(s)?.GetComponentInChildren<Canvas>();
+                if (c != null) c.renderMode = thirdPerson ? RenderMode.ScreenSpaceOverlay : RenderMode.ScreenSpaceCamera;
+            }
+            */
+
+            foreach(string s in new string[]{ "CanvasMarker(Clone)", "CanvasMarkerManager" }) 
+            {
+                Canvas c = GameObject.Find(s)?.GetComponentInChildren<Canvas>();
+                if (c != null) c.worldCamera = thirdPerson ? _camera : Locator.GetPlayerCamera().mainCamera;
+            }
+            
+            /*
+            foreach(Canvas c in GameObject.FindObjectsOfType<Canvas>())
+            {
+                parent.WriteInfo($"{c.name}, {c.renderMode}, {c.gameObject.name}, {c.worldCamera?.name}");
+            }
+            */
         }
 
         public void EnableCamera()
@@ -436,9 +497,20 @@ namespace ThirdPersonCamera
             _desiredDistance = Mathf.Clamp(_desiredDistance, minDistance, maxDistance);
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
 
-            ModifyHelmetHUD(false);
+            ModifyHelmetHUD(!_pilotingShip);
             SetArmVisibility(true);
             SetToolRenderQueue(_heldTool);
+            parent.ScreenText.ShowShipOverlay(_pilotingShip);
+
+            GameObject reticule = GameObject.Find("Reticule");
+            if (reticule != null)
+            {
+                reticule.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceCamera;
+                reticule.GetComponent<Canvas>().worldCamera = Locator.GetPlayerCamera().mainCamera;
+            }
+            else parent.WriteWarning("Reticule is gone");
+
+            SetLockOn(true);
         }
 
         private void DeactivateCamera()
@@ -457,11 +529,18 @@ namespace ThirdPersonCamera
 
             _distance = 0f;
 
-            ModifyHelmetHUD(true);
+            ModifyHelmetHUD(false);
             // Double check that theyre holding thing and ya
             if (_heldTool != null && !_heldTool.IsEquipped()) _heldTool = null;
             SetArmVisibility(_heldTool == null);
             SetToolRenderQueue(_heldTool);
+            parent.ScreenText.ShowShipOverlay(false);
+
+            GameObject reticule = GameObject.Find("Reticule");
+            if (reticule != null) reticule.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            else parent.WriteWarning("Reticule is gone");
+
+            SetLockOn(false);
         }
 
         private void SetArmVisibility(bool visible)
@@ -505,7 +584,7 @@ namespace ThirdPersonCamera
             if (Gamepad.current != null) toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
 
             // Toggle
-            if (toggle)
+            if (toggle && !cameraModeLocked)
             {
                 if (CameraActive)
                 {
@@ -517,7 +596,7 @@ namespace ThirdPersonCamera
                 }
             }
 
-            if(CameraActive)
+            if (CameraActive)
             {
                 if (Locator.GetDeathManager().IsPlayerDying()) DisableCamera();
 
@@ -566,6 +645,21 @@ namespace ThirdPersonCamera
                 // Finally, move the camera into place
                 _thirdPersonCamera.transform.position = origin + direction * _distance;
             }
+        }
+
+        public static Camera GetCamera()
+        {
+            return _camera;
+        }
+
+        public void OnPutOnHelmet()
+        {
+            ModifyHelmetHUD(CameraActive && CameraEnabled);
+        }
+
+        public void OnRemoveHelmet()
+        {
+            ModifyHelmetHUD(false);
         }
     }
 }

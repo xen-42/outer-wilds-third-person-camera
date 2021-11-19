@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace ThirdPersonCamera
 {
@@ -15,12 +16,14 @@ namespace ThirdPersonCamera
         private bool afterMemoryUplink = false;
 
         public ThirdPersonCamera ThirdPersonCamera { get; private set; }
+        public ScreenText ScreenText { get; private set; }
 
         private void Start()
         {
             WriteSuccess($"{nameof(ThirdPersonCamera)} is loaded!");
 
             ThirdPersonCamera = new ThirdPersonCamera(this);
+            ScreenText = new ScreenText(this);
 
             // Patches
             ModHelper.HarmonyHelper.AddPostfix<StreamingGroup>("OnFinishOpenEyes", typeof(Patches), nameof(Patches.OnFinishOpenEyes));
@@ -42,6 +45,11 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("FinishRetroZoom", typeof(Patches), nameof(Patches.OnFinishGrapple));
 
             ModHelper.HarmonyHelper.AddPostfix<RoastingStickController>("OnEnterRoastingMode", typeof(Patches), nameof(Patches.OnRoastingStickActivate));
+
+            MethodBase setNomaiText1 = typeof(NomaiTranslatorProp).GetMethod("SetNomaiText", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(NomaiText), typeof(int) }, null);
+            MethodBase setNomaiText2 = typeof(NomaiTranslatorProp).GetMethod("SetNomaiText", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(NomaiText) }, null);
+            ModHelper.HarmonyHelper.AddPostfix(setNomaiText1, typeof(Patches), nameof(Patches.SetNomaiText1));
+            ModHelper.HarmonyHelper.AddPostfix(setNomaiText2, typeof(Patches), nameof(Patches.SetNomaiText2));
 
             // Attach onto two events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
@@ -89,6 +97,7 @@ namespace ThirdPersonCamera
                 try
                 {
                     ThirdPersonCamera.Init();
+                    ScreenText.Init();
                     loaded = true;
 
                     if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
@@ -139,7 +148,7 @@ namespace ThirdPersonCamera
 
         public void WriteInfo(string msg)
         {
-            ModHelper.Console.WriteLine(msg, MessageType.Info);
+            ModHelper.Console.WriteLine(msg, MessageType.Debug);
         }
 
         public void WriteSuccess(string msg)

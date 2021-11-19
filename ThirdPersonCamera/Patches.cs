@@ -85,5 +85,15 @@ namespace ThirdPersonCamera
         {
             GlobalMessenger.FireEvent("OnRoastingStickActivate");
         }
+
+        public static void SetNomaiText1(NomaiTranslatorProp __instance, NomaiText text, int textID)
+        {
+            GlobalMessenger<NomaiText, int>.FireEvent("SetNomaiText", text, textID);
+        }
+
+        public static void SetNomaiText2(NomaiTranslatorProp __instance, NomaiText text)
+        {
+            GlobalMessenger<NomaiText, int>.FireEvent("SetNomaiText", text, -1);
+        }
     }
 }
