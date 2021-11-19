@@ -18,6 +18,7 @@ Known issues:
 - Raycast collides with inivisble walls sometimes
 - Toggling camera mode while moving Nomai orbs is broken
 - Translator text has really weird spacing
+- Reticule is invisible while flying the ship
 
 Wishlist (would be nice):
 - Free rotate camera 360 and with player camera (not just ship).
