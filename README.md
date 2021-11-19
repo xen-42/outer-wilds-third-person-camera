@@ -17,6 +17,7 @@ Known issues:
 - Translator text appears on screen even in first person
 - Raycast collides with inivisble walls sometimes
 - Toggling camera mode while moving Nomai orbs is broken
+- Translator text has really weird spacing
 
 Wishlist (would be nice):
 - Free rotate camera 360 and with player camera (not just ship).
