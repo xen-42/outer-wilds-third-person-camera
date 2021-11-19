@@ -9,6 +9,16 @@ namespace ThirdPersonCamera
 {
     class Patches
     {
+        public static void DisableThirdPersonCameraEvent()
+        {
+            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
+        }
+
+        public static void EnableThirdPersonCameraEvent()
+        {
+            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
+        }
+
         public static void EquipTool(PlayerTool __instance)
         {
             GlobalMessenger<PlayerTool>.FireEvent("OnEquipTool", __instance);
@@ -19,61 +29,9 @@ namespace ThirdPersonCamera
             GlobalMessenger<PlayerTool>.FireEvent("OnUnequipTool", __instance);
         }
 
-        public static void CloseEyes()
-        {
-            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
-        }
-
-        public static void OnFinishOpenEyes()
-        {
-            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
-        }
-
-        public static void OnStartLiftPlayer()
-        {
-            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
-        }
-
-        public static void OnExitLanternBounds()
-        {
-            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
-            //GlobalMessenger.FireEvent("EnableThirdPersonCamera");
-        }
-
-        public static void OnEnterLanternBounds()
-        {
-            //GlobalMessenger.FireEvent("DisableThirdPersonCamera");
-            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
-        }
-
-        public static void OnStartGrapple()
-        {
-            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
-        }
-
-        public static void OnFinishGrapple()
-        {
-            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
-        }
-
         public static void OnRetrieveProbe()
         {
             GlobalMessenger.FireEvent("OnRetrieveProbe");
-        }
-
-        public static void OnProjectionComplete()
-        {
-            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
-        }
-
-        public static void OnProjectionStart()
-        {
-            GlobalMessenger.FireEvent("DisableThirdPersonCamera");
-        }
-
-        public static void OnTriggerVolumeExit()
-        {
-            GlobalMessenger.FireEvent("EnableThirdPersonCamera");
         }
 
         public static void OnDetach(ShipDetachableModule __instance)
@@ -94,6 +52,24 @@ namespace ThirdPersonCamera
         public static void SetNomaiText2(NomaiTranslatorProp __instance, NomaiText text)
         {
             GlobalMessenger<NomaiText, int>.FireEvent("SetNomaiText", text, -1);
+        }
+
+        public static void SetNomaiAudio(NomaiTranslatorProp __instance, NomaiAudioVolume audio, int textPage)
+        {
+            GlobalMessenger<NomaiAudioVolume, int>.FireEvent("SetNomaiAudio", audio, textPage);
+        }
+
+        public static void GetTextNode(NomaiText __instance, int id)
+        {
+            // Only fire event if this wasn't called from ScreenTextHandler
+            if(__instance != ScreenTextHandler.GetCurrentText() || id != ScreenTextHandler.GetCurrentTextID())
+                GlobalMessenger<NomaiText, int>.FireEvent("GetTextNode", __instance, id);
+        }
+
+        public static void CheckSetDatabaseCondition(NomaiText __instance)
+        {
+            // This is called when something gets translated
+            GlobalMessenger<NomaiText>.FireEvent("TextedTranslated", __instance);
         }
     }
 }

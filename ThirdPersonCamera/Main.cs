@@ -15,43 +15,54 @@ namespace ThirdPersonCamera
         private bool loaded = false;
         private bool afterMemoryUplink = false;
 
-        public ThirdPersonCamera ThirdPersonCamera { get; private set; }
-        public ScreenText ScreenText { get; private set; }
+        private ThirdPersonCamera _thirdPersonCamera;
+        private ScreenTextHandler _screenTextHandler;
+        private PlayerMeshHandler _playerMeshHandler;
+        private ToolMaterialHandler _toolMaterialHandler;
+        private HUDHandler _hudHandler;
 
         private void Start()
         {
             WriteSuccess($"{nameof(ThirdPersonCamera)} is loaded!");
 
-            ThirdPersonCamera = new ThirdPersonCamera(this);
-            ScreenText = new ScreenText(this);
+            // Helpers
+            _thirdPersonCamera = new ThirdPersonCamera(this);
+            _screenTextHandler = new ScreenTextHandler(this);
+            _playerMeshHandler = new PlayerMeshHandler(this);
+            _toolMaterialHandler = new ToolMaterialHandler(this);
+            _hudHandler = new HUDHandler(this);
 
             // Patches
-            ModHelper.HarmonyHelper.AddPostfix<StreamingGroup>("OnFinishOpenEyes", typeof(Patches), nameof(Patches.OnFinishOpenEyes));
-            ModHelper.HarmonyHelper.AddPostfix<PlayerCameraEffectController>("CloseEyes", typeof(Patches), nameof(Patches.CloseEyes));
+            ModHelper.HarmonyHelper.AddPostfix<StreamingGroup>("OnFinishOpenEyes", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
+            ModHelper.HarmonyHelper.AddPostfix<PlayerCameraEffectController>("CloseEyes", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("EquipTool", typeof(Patches), nameof(Patches.EquipTool));
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("UnequipTool", typeof(Patches), nameof(Patches.UnequipTool));
-            ModHelper.HarmonyHelper.AddPostfix<GhostGrabController>("OnStartLiftPlayer", typeof(Patches), nameof(Patches.OnStartLiftPlayer));
-            ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("ExitLanternBounds", typeof(Patches), nameof(Patches.OnExitLanternBounds));
-            ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("EnterLanternBounds", typeof(Patches), nameof(Patches.OnEnterLanternBounds));
+            ModHelper.HarmonyHelper.AddPostfix<GhostGrabController>("OnStartLiftPlayer", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
+            ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("ExitLanternBounds", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
+            ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("EnterLanternBounds", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<ProbeLauncher>("RetrieveProbe", typeof(Patches), nameof(Patches.OnRetrieveProbe));
-            
-            ModHelper.HarmonyHelper.AddPrefix<MindProjectorTrigger>("OnProjectionStart", typeof(Patches), nameof(Patches.OnProjectionStart));
-            ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnProjectionComplete", typeof(Patches), nameof(Patches.OnProjectionComplete));
-            ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnTriggerVolumeExit", typeof(Patches), nameof(Patches.OnTriggerVolumeExit));
-
+            ModHelper.HarmonyHelper.AddPrefix<MindProjectorTrigger>("OnProjectionStart", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
+            ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnProjectionComplete", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
+            ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnTriggerVolumeExit", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<ShipDetachableModule>("Detach", typeof(Patches), nameof(Patches.OnDetach));
-
-            ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("StartZoomIn", typeof(Patches), nameof(Patches.OnStartGrapple));
-            ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("FinishRetroZoom", typeof(Patches), nameof(Patches.OnFinishGrapple));
-
+            ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("StartZoomIn", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
+            ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("FinishRetroZoom", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<RoastingStickController>("OnEnterRoastingMode", typeof(Patches), nameof(Patches.OnRoastingStickActivate));
 
             MethodBase setNomaiText1 = typeof(NomaiTranslatorProp).GetMethod("SetNomaiText", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(NomaiText), typeof(int) }, null);
-            MethodBase setNomaiText2 = typeof(NomaiTranslatorProp).GetMethod("SetNomaiText", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(NomaiText) }, null);
             ModHelper.HarmonyHelper.AddPostfix(setNomaiText1, typeof(Patches), nameof(Patches.SetNomaiText1));
+
+            MethodBase setNomaiText2 = typeof(NomaiTranslatorProp).GetMethod("SetNomaiText", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(NomaiText) }, null);
             ModHelper.HarmonyHelper.AddPostfix(setNomaiText2, typeof(Patches), nameof(Patches.SetNomaiText2));
 
-            // Attach onto two events
+            ModHelper.HarmonyHelper.AddPostfix<NomaiTranslatorProp>("SetNomaiAudio", typeof(Patches), nameof(Patches.SetNomaiAudio));
+
+            MethodBase getTextNode = typeof(NomaiText).GetMethod("GetTextNode", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(int) }, null);
+            ModHelper.HarmonyHelper.AddPostfix(getTextNode, typeof(Patches), nameof(Patches.GetTextNode));
+
+            ModHelper.HarmonyHelper.AddPostfix<NomaiText>("CheckSetDatabaseCondition", typeof(Patches), nameof(Patches.CheckSetDatabaseCondition));
+
+            // Events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -63,7 +74,7 @@ namespace ThirdPersonCamera
             SceneManager.sceneLoaded -= OnSceneLoaded;
             ModHelper.Events.Event -= OnEvent;
 
-            ThirdPersonCamera.OnDestroy();
+            _thirdPersonCamera.OnDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -72,22 +83,15 @@ namespace ThirdPersonCamera
             {
                 loaded = false;
                 afterMemoryUplink = false;
-            } else if (loaded)
+            } 
+            else if (loaded)
             {
                 // Already loaded but we're being put into the SolarSystem scene again
                 // We must have done the memory uplink (universe is reset after)
                 afterMemoryUplink = true;
             }
 
-            // I'm paranoid
-            try
-            {
-                ThirdPersonCamera.PreInit();
-            }
-            catch (Exception)
-            {
-                WriteError("PreInit failed");
-            }
+            _thirdPersonCamera.PreInit();
         }
 
         private void OnEvent(MonoBehaviour behaviour, Events ev)
@@ -96,19 +100,18 @@ namespace ThirdPersonCamera
             {
                 try
                 {
-                    ThirdPersonCamera.Init();
-                    ScreenText.Init();
+                    _thirdPersonCamera.Init();
+                    _screenTextHandler.Init();
                     loaded = true;
 
-                    if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
+                    if (afterMemoryUplink) _thirdPersonCamera.CameraEnabled = true;
 
                     // This actually doesn't seem to affect the player camera
                     GameObject helmetMesh = GameObject.Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
                     helmetMesh.layer = 0;
 
                     GameObject probeLauncher = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncher>().gameObject;
-                    if (probeLauncher == null) WriteWarning($"Couldn't find ProbeLauncher");
-                    else if (probeLauncher.layer != 0) probeLauncher.layer = 0;
+                    probeLauncher.layer = 0;
 
                 }
                 catch (Exception)
@@ -118,22 +121,18 @@ namespace ThirdPersonCamera
             }
         }
 
-        public static GameObject[] FindGameObjectsWithLayer(int layer)
-        {
-            List<GameObject> objects = new List<GameObject>();
-            foreach(GameObject go in FindObjectsOfType<GameObject>())
-            {
-                if (go.layer == layer) objects.Add(go);
-            }
-            if (objects.Count == 0) return null;
-            return objects.ToArray();
-        }
-
         private void Update()
         {
             if (!loaded) return;
 
-            ThirdPersonCamera.Update();
+            _thirdPersonCamera.Update();
+            _playerMeshHandler.Update();
+            _toolMaterialHandler.Update();
+        }
+
+        public bool IsThirdPerson()
+        {
+            return _thirdPersonCamera.CameraEnabled && _thirdPersonCamera.CameraActive;
         }
 
         public void WriteError(string msg)
@@ -148,7 +147,7 @@ namespace ThirdPersonCamera
 
         public void WriteInfo(string msg)
         {
-            ModHelper.Console.WriteLine(msg, MessageType.Debug);
+            ModHelper.Console.WriteLine(msg, MessageType.Info);
         }
 
         public void WriteSuccess(string msg)
