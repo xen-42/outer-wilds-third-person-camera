@@ -89,6 +89,7 @@ namespace ThirdPersonCamera
                 // Have to keep their relative order
                 foreach (Material m in meshRenderer.materials)
                 {
+                    parent.WriteInfo($"{m.name}, {m.renderQueue}");
                     if (thirdPerson && m.renderQueue >= 2000) m.renderQueue -= 2000;
                     else if (!thirdPerson && m.renderQueue < 2000) m.renderQueue += 2000;
                 }

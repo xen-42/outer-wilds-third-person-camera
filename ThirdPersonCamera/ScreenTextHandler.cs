@@ -46,6 +46,10 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
 
+            GlobalMessenger.AddListener("LoadFromMenu", new Callback(this.ClearAllNotifications));
+            GlobalMessenger.AddListener("RestartTimeLoop", new Callback(this.ClearAllNotifications));
+            GlobalMessenger.AddListener("ResetSimulation", new Callback(this.ClearAllNotifications));
+
             NotificationManager.SharedInstance.RegisterNotifiable(this);
         }
 
@@ -59,6 +63,10 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
+
+            GlobalMessenger.RemoveListener("LoadFromMenu", new Callback(this.ClearAllNotifications));
+            GlobalMessenger.RemoveListener("RestartTimeLoop", new Callback(this.ClearAllNotifications));
+            GlobalMessenger.RemoveListener("ResetSimulation", new Callback(this.ClearAllNotifications));
 
             NotificationManager.SharedInstance.UnregisterNotifiable(this);
         }
@@ -243,7 +251,14 @@ namespace ThirdPersonCamera
             }
             shipText.text = GetShipText();
         }
-    
+
+        private void ClearAllNotifications()
+        {
+            this._shipNotifications.Clear();
+            shipText.text = "";
+        }
+
+
         IEnumerator WaitAndRemoveNotification(NotificationData data, float t)
         {
             yield return new WaitForSeconds(t);

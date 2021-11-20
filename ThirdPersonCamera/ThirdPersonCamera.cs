@@ -50,6 +50,9 @@ namespace ThirdPersonCamera
 
         private bool overTheShoulder = false;
 
+        public static OWCamera CurrentCamera { get; private set; }
+        public static OWCamera PreviousCamera { get; private set; }
+
         public ThirdPersonCamera(Main _main)
         {
             parent = _main;
@@ -96,6 +99,8 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("EnterLandingView", new Callback(this.OnEnterLandingView));
             GlobalMessenger.AddListener("ExitLandingView", new Callback(this.OnExitLandingView));
 
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
+
             parent.WriteSuccess("Done creating ThirdPersonCamera");
         }
 
@@ -128,6 +133,8 @@ namespace ThirdPersonCamera
 
             GlobalMessenger.RemoveListener("EnterLandingView", new Callback(this.OnEnterLandingView));
             GlobalMessenger.RemoveListener("ExitLandingView", new Callback(this.OnExitLandingView));
+
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
 
             parent.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
@@ -182,6 +189,10 @@ namespace ThirdPersonCamera
             CameraActive = false;
 
             HUDparent = GameObject.Find("Helmet").transform.parent;
+
+            parent.WriteInfo(Locator.GetPlayerBody().GetComponentInChildren<Light>().gameObject.name);
+
+            CurrentCamera = Locator.GetPlayerCamera();
         }
 
         private void OnEnterLandingView()
@@ -216,6 +227,8 @@ namespace ThirdPersonCamera
 
         private void OnEnterFlightConsole(OWRigidbody _owrb)
         {
+            // If the cockpit had been ejected then we must have restarted the loop
+            if(_ejected) _ejected = false;
             SetPilotingShip(true);
         }
 
@@ -258,6 +271,12 @@ namespace ThirdPersonCamera
 
             //if (defaultPosition) cameraPivot.transform.localPosition = new Vector3(0, 0, 0);
             //else cameraPivot.transform.localPosition = cameraPivot.transform.TransformDirection(Vector3.left);
+        }
+
+        private void OnSwitchActiveCamera(OWCamera camera)
+        {
+            PreviousCamera = CurrentCamera;
+            CurrentCamera = camera;
         }
 
         public void EnableCamera()
@@ -349,38 +368,54 @@ namespace ThirdPersonCamera
 
         public void Update()
         {
-            if (!CameraEnabled) return;
-
-            float scroll = -Mouse.current.scroll.ReadValue().y;
-
             // If a keyboard/gamepad aren't plugged in then these are null
             bool toggle = false;
-            bool toggleShoulder = false;
+            //bool toggleShoulder = false;
             if (Keyboard.current != null)
             {
                 toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
-                toggleShoulder |= Keyboard.current[Key.B].wasReleasedThisFrame;
+                //toggleShoulder |= Keyboard.current[Key.B].wasReleasedThisFrame;
             }
             if (Gamepad.current != null)
             {
                 toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
-                toggleShoulder |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadRight].wasReleasedThisFrame;
+                //toggleShoulder |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadRight].wasReleasedThisFrame;
             }
 
-            // Toggle
-            if (!cameraModeLocked)
+            if (!CameraEnabled)
             {
-                if(toggle)
-                {
-                    if (CameraActive) DeactivateCamera();
-                    else ActivateCamera();
-                }
-                if(toggleShoulder)
-                {
-                    overTheShoulder = !overTheShoulder;
-                    SetCameraPivotPosition(!(overTheShoulder && parent.IsThirdPerson() && !_pilotingShip));
-                }
+                if(toggle) Locator.GetPlayerAudioController().PlayNegativeUISound();
+                return;
             }
+
+            float scroll = -Mouse.current.scroll.ReadValue().y;
+
+            // Toggle
+            if(toggle)
+            {
+                if (!cameraModeLocked)
+                {
+                    if (CameraActive)
+                    {
+                        Locator.GetPlayerAudioController().PlayLockOff();
+                        DeactivateCamera();
+                    }
+                    else
+                    {
+                        Locator.GetPlayerAudioController().PlayLockOn();
+                        ActivateCamera();
+                    }
+                }
+                else Locator.GetPlayerAudioController().PlayNegativeUISound();
+            }
+
+            /*
+            if(toggleShoulder)
+            {
+                overTheShoulder = !overTheShoulder;
+                SetCameraPivotPosition(!(overTheShoulder && parent.IsThirdPerson() && !_pilotingShip));
+            }
+            */
 
             if (CameraActive)
             {

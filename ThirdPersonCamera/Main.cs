@@ -15,22 +15,22 @@ namespace ThirdPersonCamera
         private bool loaded = false;
         private bool afterMemoryUplink = false;
 
-        private ThirdPersonCamera _thirdPersonCamera;
-        private ScreenTextHandler _screenTextHandler;
-        private PlayerMeshHandler _playerMeshHandler;
-        private ToolMaterialHandler _toolMaterialHandler;
-        private HUDHandler _hudHandler;
+        public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
+        public static ScreenTextHandler ScreenTextHandler { get; private set; }
+        public static PlayerMeshHandler PlayerMeshHandler { get; private set; }
+        public static ToolMaterialHandler ToolMaterialHandler { get; private set; }
+        public static HUDHandler HudHandler { get; private set; }
 
         private void Start()
         {
-            WriteSuccess($"{nameof(ThirdPersonCamera)} is loaded!");
+            WriteSuccess($"ThirdPersonCamera is loaded!");
 
             // Helpers
-            _thirdPersonCamera = new ThirdPersonCamera(this);
-            _screenTextHandler = new ScreenTextHandler(this);
-            _playerMeshHandler = new PlayerMeshHandler(this);
-            _toolMaterialHandler = new ToolMaterialHandler(this);
-            _hudHandler = new HUDHandler(this);
+            ThirdPersonCamera = new ThirdPersonCamera(this);
+            ScreenTextHandler = new ScreenTextHandler(this);
+            PlayerMeshHandler = new PlayerMeshHandler(this);
+            ToolMaterialHandler = new ToolMaterialHandler(this);
+            HudHandler = new HUDHandler(this);
 
             // Patches
             ModHelper.HarmonyHelper.AddPostfix<StreamingGroup>("OnFinishOpenEyes", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
@@ -62,6 +62,10 @@ namespace ThirdPersonCamera
 
             ModHelper.HarmonyHelper.AddPostfix<NomaiText>("CheckSetDatabaseCondition", typeof(Patches), nameof(Patches.CheckSetDatabaseCondition));
 
+            ModHelper.HarmonyHelper.AddPrefix<QuantumObject>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.OnSwitchActiveCamera));
+
+            ModHelper.HarmonyHelper.AddPostfix<TimelineObliterationController>("OnCrackEffectComplete", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
+
             // Events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
 
@@ -74,7 +78,7 @@ namespace ThirdPersonCamera
             SceneManager.sceneLoaded -= OnSceneLoaded;
             ModHelper.Events.Event -= OnEvent;
 
-            _thirdPersonCamera.OnDestroy();
+            ThirdPersonCamera.OnDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -91,7 +95,7 @@ namespace ThirdPersonCamera
                 afterMemoryUplink = true;
             }
 
-            _thirdPersonCamera.PreInit();
+            ThirdPersonCamera.PreInit();
         }
 
         private void OnEvent(MonoBehaviour behaviour, Events ev)
@@ -100,11 +104,11 @@ namespace ThirdPersonCamera
             {
                 try
                 {
-                    _thirdPersonCamera.Init();
-                    _screenTextHandler.Init();
+                    ThirdPersonCamera.Init();
+                    ScreenTextHandler.Init();
                     loaded = true;
 
-                    if (afterMemoryUplink) _thirdPersonCamera.CameraEnabled = true;
+                    if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
 
                     // This actually doesn't seem to affect the player camera
                     GameObject helmetMesh = GameObject.Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
@@ -125,14 +129,14 @@ namespace ThirdPersonCamera
         {
             if (!loaded) return;
 
-            _thirdPersonCamera.Update();
-            _playerMeshHandler.Update();
-            _toolMaterialHandler.Update();
+            ThirdPersonCamera.Update();
+            PlayerMeshHandler.Update();
+            ToolMaterialHandler.Update();
         }
 
         public bool IsThirdPerson()
         {
-            return _thirdPersonCamera.CameraEnabled && _thirdPersonCamera.CameraActive;
+            return ThirdPersonCamera.CameraEnabled && ThirdPersonCamera.CameraActive;
         }
 
         public void WriteError(string msg)
