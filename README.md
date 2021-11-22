@@ -13,6 +13,7 @@ Known issues:
 - HUD way too big at low screen resolution
 - SignalScope frequency and map HUD don't show in third person
 - Solanum's rocks textures get messed up when switching cameras
+- Weird orb appears around your head if you go in ghost matter
 
 Wishlist (would be nice):
 - Actually catch fire in fires
