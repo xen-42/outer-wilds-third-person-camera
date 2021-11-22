@@ -1,6 +1,6 @@
 # Outer Wilds Third Person Camera
 
-![3rd person](https://user-images.githubusercontent.com/22628069/142057019-e2dcca28-6838-4b94-b45a-29843d44ab62.png)
+![image](https://user-images.githubusercontent.com/22628069/142803013-35bd56f4-43db-42e0-9f52-09f46b9569ca.png)
 
 Press V or the left directional button (Gamepad) to toggle between 1st and 3rd person.
 
@@ -13,6 +13,7 @@ Known issues:
 - HUD way too big at low screen resolution
 - SignalScope frequency and map HUD don't show in third person
 - Solanum's rocks textures get messed up when switching cameras
+- Weird orb appears around your head if you go in ghost matter
 
 Wishlist (would be nice):
 - Actually catch fire in fires
