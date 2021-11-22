@@ -9,18 +9,16 @@ namespace ThirdPersonCamera
 {
     public class PlayerMeshHandler
     {
-        private Main parent;
         private bool _isToolHeld = false;
         private bool _setArmVisibleNextTick = false;
 
-        public PlayerMeshHandler(Main _main)
+        public PlayerMeshHandler()
         {
-            parent = _main;
-
             GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
             GlobalMessenger.AddListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
+            GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
         }
 
         private void OnDeactivateThirdPersonCamera()
@@ -38,7 +36,7 @@ namespace ThirdPersonCamera
         private void OnToolEquiped(PlayerTool _)
         {
             _isToolHeld = true;
-            if (parent.IsThirdPerson()) _setArmVisibleNextTick = true;
+            if (Main.IsThirdPerson()) _setArmVisibleNextTick = true;
         }
 
         private void OnToolUnequiped(PlayerTool _)
@@ -54,7 +52,7 @@ namespace ThirdPersonCamera
 
             if (suitArm == null && fleshArm == null)
             {
-                parent.WriteError("Can't find arm");
+                Main.WriteError("Can't find arm");
             }
             else
             {
@@ -62,6 +60,11 @@ namespace ThirdPersonCamera
 
                 arm.layer = visible ? 0 : 22;
             }
+        }
+
+        private void OnRemoveHelmet()
+        {
+            SetHeadVisibility(true);
         }
 
         private void SetHeadVisibility(bool visible)
@@ -72,9 +75,8 @@ namespace ThirdPersonCamera
             if (head != null)
             {
                 if (head.layer != 0) head.layer = 0;
-                //head.transform.localScale = visible ? new Vector3(1, 1, 1) : new Vector3(0, 0, 0);
             } 
-            else parent.WriteWarning("Couldn't find the player's head");
+            else Main.WriteWarning("Couldn't find the player's head");
         }
 
         public void Update()

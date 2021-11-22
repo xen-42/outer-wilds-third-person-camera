@@ -9,8 +9,6 @@ namespace ThirdPersonCamera
 {
     public class ToolMaterialHandler
     {
-        private Main parent;
-
         private PlayerTool _heldTool;
 
         // Some tools must be set one tick after equip
@@ -20,10 +18,8 @@ namespace ThirdPersonCamera
         // We make some tools larger in 3rd person view
         private readonly string[] resizingExemptTools = { "NomaiTranslatorProp", "ProbeLauncher", "TutorialCamera_Base", "TutorialProbeLauncher_Base" };
 
-        public ToolMaterialHandler(Main _main)
+        public ToolMaterialHandler()
         {
-            parent = _main;
-
             GlobalMessenger.AddListener("OnRetrieveProbe", new Callback(OnRetrieveProbe));
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
@@ -42,16 +38,16 @@ namespace ThirdPersonCamera
 
         public void OnRetrieveProbe()
         {
-            SetToolMaterials(parent.IsThirdPerson());
+            SetToolMaterials(Main.IsThirdPerson());
         }
 
         public void OnToolEquiped(PlayerTool tool)
         {
             _heldTool = tool;
 
-            parent.WriteInfo(_heldTool.name + " " + _heldTool.tag + " " + _heldTool.GetType());
+            Main.WriteInfo("Picked up " + _heldTool.name + " " + _heldTool.gameObject.name + " " + _heldTool.GetType());
 
-            if (!parent.IsThirdPerson()) return;
+            if (!Main.IsThirdPerson()) return;
 
             // Some tool materials must be set next tick
             if (laterTickTools.Contains(_heldTool.name)) _thirdPersonMaterialNextTick = true;
@@ -89,7 +85,7 @@ namespace ThirdPersonCamera
                 // Have to keep their relative order
                 foreach (Material m in meshRenderer.materials)
                 {
-                    parent.WriteInfo($"{m.name}, {m.renderQueue}");
+                    if (m.name.Contains("NOM")) continue; // Don't want to mess up scroll materials
                     if (thirdPerson && m.renderQueue >= 2000) m.renderQueue -= 2000;
                     else if (!thirdPerson && m.renderQueue < 2000) m.renderQueue += 2000;
                 }

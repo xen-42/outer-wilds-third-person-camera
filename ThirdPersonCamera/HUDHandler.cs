@@ -9,13 +9,11 @@ namespace ThirdPersonCamera
 {
     public class HUDHandler
     {
-        private Main parent;
         private bool _isPilotingShip = false;
+        private bool _checkCockpitLockOnNextTick = false;
 
-        public HUDHandler(Main _main)
+        public HUDHandler()
         {
-            parent = _main;
-
             GlobalMessenger.AddListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
             GlobalMessenger.AddListener("PutOnHelmet", new Callback(OnPutOnHelmet));
@@ -29,6 +27,7 @@ namespace ThirdPersonCamera
             ShowHelmetHUD(!_isPilotingShip);
             ShowReticule(_isPilotingShip);
             ShowMarkers(true);
+            ShowCockpitLockOn(_isPilotingShip);
         }
 
         private void OnDeactivateThirdPersonCamera()
@@ -36,11 +35,12 @@ namespace ThirdPersonCamera
             ShowHelmetHUD(false);
             ShowReticule(true);
             ShowMarkers(false);
+            ShowCockpitLockOn(false);
         }
 
         public void OnPutOnHelmet()
         {
-            ShowHelmetHUD(parent.IsThirdPerson());
+            ShowHelmetHUD(Main.IsThirdPerson());
         }
 
         public void OnRemoveHelmet()
@@ -51,7 +51,9 @@ namespace ThirdPersonCamera
         private void OnExitFlightConsole()
         {
             _isPilotingShip = false;
-            ShowReticule(!parent.IsThirdPerson());
+            ShowReticule(!Main.IsThirdPerson());
+            ShowMarkers(Main.IsThirdPerson());
+            ShowCockpitLockOn(false);
         }
 
         private void OnEnterFlightConsole(OWRigidbody _)
@@ -59,26 +61,24 @@ namespace ThirdPersonCamera
             _isPilotingShip = true;
             ShowHelmetHUD(false);
             ShowReticule(true);
+            ShowMarkers(Main.IsThirdPerson());
+
+            // Set it next frame or it doesnt work sometimes idk
+            _checkCockpitLockOnNextTick = true;
+            ShowCockpitLockOn(Main.IsThirdPerson());
         }
 
         private void ShowHelmetHUD(bool visible)
         {
-            // Change the HUD
-            if (Locator.GetPlayerSuit().IsWearingHelmet() || (_isPilotingShip && Locator.GetPlayerSuit().IsWearingSuit()))
+            Canvas UICanvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas").GetComponent<Canvas>();
+            UICanvas.renderMode = visible && Locator.GetPlayerSuit().IsWearingHelmet() ? RenderMode.ScreenSpaceOverlay : RenderMode.ScreenSpaceCamera;
+            foreach (Canvas canvas in GameObject.Find("PlayerHUD/HelmetOffUI").GetComponentsInChildren<Canvas>())
             {
-                Canvas UICanvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas").GetComponent<Canvas>();
-                UICanvas.renderMode = !visible ? RenderMode.ScreenSpaceCamera : RenderMode.ScreenSpaceOverlay;
-            }
-            else
-            {
-                foreach (Canvas canvas in GameObject.Find("PlayerHUD/HelmetOffUI").GetComponentsInChildren<Canvas>())
-                {
-                    canvas.worldCamera = !visible ? Locator.GetPlayerCamera().mainCamera : ThirdPersonCamera.GetCamera();
-                }
+                canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
             }
 
             // Get rid of 2D helmet stuff
-            GameObject.Find("Helmet").transform.localScale = parent.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+            GameObject.Find("Helmet").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
         }
 
         private void ShowReticule(bool visible)
@@ -104,20 +104,26 @@ namespace ThirdPersonCamera
             }
 
             /*
-            string[] strings = { "MapLockOnCanvas", "CockpitLockOnCanvas", "MarkerManager" };
-            foreach(string s in strings)
-            {
-                Canvas c = GameObject.Find(s)?.GetComponentInChildren<Canvas>();
-                if (c != null) c.renderMode = thirdPerson ? RenderMode.ScreenSpaceOverlay : RenderMode.ScreenSpaceCamera;
-            }
-            */
-
-            /*
+            Main.WriteInfo("Writing Canvas names");
             foreach(Canvas c in GameObject.FindObjectsOfType<Canvas>())
             {
-                parent.WriteInfo($"{c.name}, {c.renderMode}, {c.gameObject.name}, {c.worldCamera?.name}");
+                Main.WriteInfo($"{c.name}, {c.renderMode}, {c.gameObject.name}, {c.worldCamera?.name}");
             }
             */
+        }
+
+        private void ShowCockpitLockOn(bool visible)
+        {
+            Canvas c = GameObject.Find("CockpitLockOnCanvas")?.GetComponentInChildren<Canvas>();
+            if (c != null) c.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
+        }
+
+        public void Update()
+        {
+            if (_checkCockpitLockOnNextTick)
+            {
+                ShowCockpitLockOn(Main.IsThirdPerson());
+            }
         }
     }
 }

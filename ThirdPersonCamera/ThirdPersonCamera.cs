@@ -12,11 +12,9 @@ namespace ThirdPersonCamera
 {
     public class ThirdPersonCamera
     {
-        private readonly Main parent;
-
         private static GameObject _thirdPersonCamera;
         private static Camera  _camera;
-        private OWCamera _OWCamera;
+        public static OWCamera OWCamera { get; private set; }
 
         private GameObject cameraPivot;
 
@@ -25,20 +23,24 @@ namespace ThirdPersonCamera
         private float _distance = 0f;
         private float _desiredDistance = 0f;
 
-        private const float MIN_PLAYER_DISTANCE = 1.5f;
-        private const float DEFAULT_PLAYER_DISTANCE = 3.5f;
-        private const float MAX_PLAYER_DISTANCE = 5.0f;
+        private const float MIN_PLAYER_DISTANCE = 1f;
+        private const float DEFAULT_PLAYER_DISTANCE = 3f;
+        private const float MAX_PLAYER_DISTANCE = 10.0f;
+
+        private const float MIN_PLAYER_SUIT_DISTANCE = 1.5f;
+        private const float DEFAULT_PLAYER_SUIT_DISTANCE = 4f;
+        private const float MAX_PLAYER_SUIT_DISTANCE = 15f;
 
         private const float MIN_SHIP_DISTANCE = 10f;
         private const float DEFAULT_SHIP_DISTANCE = 25f;
-        private const float MAX_SHIP_DISTANCE = 30f;
+        private const float MAX_SHIP_DISTANCE = 60f;
 
         private const float CAMERA_SPEED = 4.0f;
 
         // Enabled is if we are allowed to be in 3rd person
         // Active is if the player wants to be in 3rd person
-        public bool CameraEnabled { get; set; } = false;
-        public bool CameraActive { get; private set; } = false;
+        public bool CameraEnabled { get; set; } 
+        public bool CameraActive { get; private set; } 
 
         private bool isRoastingMarshmallow = false;
 
@@ -46,18 +48,15 @@ namespace ThirdPersonCamera
 
         private bool cameraModeLocked = false;
 
-        private Transform HUDparent = null;
+        private bool justStartedLoop = true;
 
-        private bool overTheShoulder = false;
 
         public static OWCamera CurrentCamera { get; private set; }
         public static OWCamera PreviousCamera { get; private set; }
 
-        public ThirdPersonCamera(Main _main)
+        public ThirdPersonCamera()
         {
-            parent = _main;
-
-            parent.WriteInfo("Creating ThirdPersonCamera");
+            Main.WriteInfo("Creating ThirdPersonCamera");
 
             // Different behaviour when piloting the ship or not, so we must track this
             GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
@@ -70,17 +69,12 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("EnterShipComputer", new Callback(DisableCamera));
             GlobalMessenger.AddListener("ExitShipComputer", new Callback(EnableCamera));
 
-            GlobalMessenger.AddListener("EnterMapView", new Callback(OnEnterMapView));
-            GlobalMessenger.AddListener("ExitMapView", new Callback(OnExitMapView));
-
             GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>(DisableCameraOnDeath));
             GlobalMessenger.AddListener("TriggerMemoryUplink", new Callback(DisableCamera));
             GlobalMessenger.AddListener("ResetSimulation", new Callback(EnableCamera));
 
             GlobalMessenger<Signalscope>.AddListener("EnterSignalscopeZoom", new Callback<Signalscope>(DisableCameraOnSignalscopeZoom));
             GlobalMessenger.AddListener("ExitSignalscopeZoom", new Callback(EnableCamera));
-
-            //GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", OnSwitchActiveCamera);
 
             GlobalMessenger.AddListener("StartViewingProjector", new Callback(DisableCamera));
             GlobalMessenger.AddListener("EndViewingProjector", new Callback(EnableCamera));
@@ -92,16 +86,15 @@ namespace ThirdPersonCamera
             GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
             GlobalMessenger.AddListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
 
+            GlobalMessenger.AddListener("FinishOpenEyes", new Callback(OnFinishOpenEyes));
+
             // Different behaviour for certain tools
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
 
-            GlobalMessenger.AddListener("EnterLandingView", new Callback(this.OnEnterLandingView));
-            GlobalMessenger.AddListener("ExitLandingView", new Callback(this.OnExitLandingView));
-
             GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
 
-            parent.WriteSuccess("Done creating ThirdPersonCamera");
+            Main.WriteSuccess("Done creating ThirdPersonCamera");
         }
 
         public void OnDestroy()
@@ -112,14 +105,11 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("ExitRoastingMode", new Callback(EnableCamera));
             GlobalMessenger.RemoveListener("EnterShipComputer", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("ExitShipComputer", new Callback(EnableCamera));
-            //GlobalMessenger.RemoveListener("EnterMapView", new Callback(DisableCamera));
-            //GlobalMessenger.RemoveListener("ExitMapView", new Callback(EnableCamera));
             GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", new Callback<DeathType>(DisableCameraOnDeath));
             GlobalMessenger.RemoveListener("TriggerMemoryUplink", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("ResetSimulation", new Callback(EnableCamera));
             GlobalMessenger<Signalscope>.RemoveListener("EnterSignalscopeZoom", new Callback<Signalscope>(DisableCameraOnSignalscopeZoom));
             GlobalMessenger.RemoveListener("ExitSignalscopeZoom", new Callback(EnableCamera));
-            //GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", OnSwitchActiveCamera);
             GlobalMessenger.RemoveListener("DisableThirdPersonCamera", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("EnableThirdPersonCamera", new Callback(EnableCamera));
 
@@ -127,21 +117,19 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
+            GlobalMessenger.RemoveListener("FinishOpenEyes", new Callback(OnFinishOpenEyes));
 
             GlobalMessenger.RemoveListener("StartViewingProjector", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
 
-            GlobalMessenger.RemoveListener("EnterLandingView", new Callback(this.OnEnterLandingView));
-            GlobalMessenger.RemoveListener("ExitLandingView", new Callback(this.OnExitLandingView));
-
             GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
 
-            parent.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
+            Main.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
 
         public void PreInit()
         {
-            parent.WriteInfo("PreInit ThirdPersonCamera");
+            Main.WriteInfo("PreInit ThirdPersonCamera");
 
             // Have to do this here or else the skybox breaks
             _thirdPersonCamera = new GameObject();
@@ -150,15 +138,15 @@ namespace ThirdPersonCamera
             _camera = _thirdPersonCamera.AddComponent<Camera>();
             _camera.enabled = false;
 
-            _OWCamera = _thirdPersonCamera.AddComponent<OWCamera>();
-            _OWCamera.renderSkybox = true;
+            OWCamera = _thirdPersonCamera.AddComponent<OWCamera>();
+            OWCamera.renderSkybox = true;
 
             _desiredDistance = DEFAULT_PLAYER_DISTANCE;
         }
 
         public void Init()
         {
-            parent.WriteInfo("Init ThirdPersonCamera");
+            Main.WriteInfo("Init ThirdPersonCamera");
 
             // Crashes without this idk stole it from Nebulas FreeCam
             FlashbackScreenGrabImageEffect temp = _thirdPersonCamera.AddComponent<FlashbackScreenGrabImageEffect>();
@@ -177,6 +165,7 @@ namespace ThirdPersonCamera
             cameraPivot.transform.parent = Locator.GetPlayerCamera().transform;
             cameraPivot.transform.position = Locator.GetPlayerCamera().transform.position;
             cameraPivot.transform.rotation = Locator.GetPlayerCamera().transform.rotation;
+            cameraPivot.transform.localPosition = Vector3.up * 0.2f;
 
             _thirdPersonCamera.transform.parent = cameraPivot.transform;
             _thirdPersonCamera.transform.position = cameraPivot.transform.position;
@@ -186,23 +175,36 @@ namespace ThirdPersonCamera
 
             // Now loaded but we default to being disabled
             CameraEnabled = false;
-            CameraActive = false;
+            CameraActive = true;
+            justStartedLoop = true;
 
-            HUDparent = GameObject.Find("Helmet").transform.parent;
-
-            parent.WriteInfo(Locator.GetPlayerBody().GetComponentInChildren<Light>().gameObject.name);
+            _pilotingShip = false;
+            _ejected = false;
 
             CurrentCamera = Locator.GetPlayerCamera();
+
+            Main.WriteInfo($"{CameraEnabled}, {CameraActive}, {justStartedLoop}, {Locator.GetActiveCamera().name}");
         }
 
-        private void OnEnterLandingView()
+        private float GetMinDistance()
         {
-            cameraModeLocked = true;
+            if (_pilotingShip) return MIN_SHIP_DISTANCE;
+            if (Locator.GetPlayerSuit().IsWearingSuit()) return MIN_PLAYER_SUIT_DISTANCE;
+            else return MIN_PLAYER_DISTANCE;
         }
 
-        private void OnExitLandingView()
+        private float GetMaxDistance()
         {
-            cameraModeLocked = false;
+            if (_pilotingShip) return MAX_SHIP_DISTANCE;
+            if (Locator.GetPlayerSuit().IsWearingSuit()) return MAX_PLAYER_SUIT_DISTANCE;
+            else return MAX_PLAYER_DISTANCE;
+        }
+
+        private float GetDefaultDistance()
+        {
+            if (_pilotingShip) return DEFAULT_SHIP_DISTANCE;
+            if (Locator.GetPlayerSuit().IsWearingSuit()) return DEFAULT_PLAYER_SUIT_DISTANCE;
+            else return DEFAULT_PLAYER_DISTANCE;
         }
 
         private void OnShipModuleDetached(ShipDetachableModule module)
@@ -227,8 +229,6 @@ namespace ThirdPersonCamera
 
         private void OnEnterFlightConsole(OWRigidbody _owrb)
         {
-            // If the cockpit had been ejected then we must have restarted the loop
-            if(_ejected) _ejected = false;
             SetPilotingShip(true);
         }
 
@@ -237,13 +237,11 @@ namespace ThirdPersonCamera
             _pilotingShip = piloting;
 
             // Ensure the distance is within bounds
-            float minDistance = piloting ? MIN_SHIP_DISTANCE : MIN_PLAYER_DISTANCE;
-            float maxDistance = piloting ? MAX_SHIP_DISTANCE : MAX_PLAYER_DISTANCE;
+            float minDistance = GetMinDistance();
+            float maxDistance = GetMaxDistance();
 
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
-            _desiredDistance = _pilotingShip ? DEFAULT_SHIP_DISTANCE : DEFAULT_PLAYER_DISTANCE;
-
-            SetCameraPivotPosition(!_pilotingShip && overTheShoulder);
+            _desiredDistance = GetDefaultDistance();
         }
 
         private void OnRoastingStickActivate()
@@ -251,7 +249,7 @@ namespace ThirdPersonCamera
             // Put the stick back to normal
             GameObject stick = GameObject.Find("Stick_Root");
             if (stick != null) stick.transform.localScale = new Vector3(1, 1, 1);
-            else parent.WriteWarning("Can't find stick");
+            else Main.WriteWarning("Can't find stick");
         }
 
         private void OnExitRoastingMode()
@@ -261,31 +259,78 @@ namespace ThirdPersonCamera
 
             GameObject stick = GameObject.Find("Stick_Root");
             if (stick != null) stick.transform.localScale = new Vector3(0, 0, 0);
-            else parent.WriteWarning("Can't find stick");
+            else Main.WriteWarning("Can't find stick");
         }
 
-        private void SetCameraPivotPosition(bool defaultPosition)
+        private void OnFinishOpenEyes()
         {
-            // I wanted to do this but your tools like raycast out of themselves and not out of the camera
-            // So I'd have to edit all of them to raycast from the camera pivot point
-
-            //if (defaultPosition) cameraPivot.transform.localPosition = new Vector3(0, 0, 0);
-            //else cameraPivot.transform.localPosition = cameraPivot.transform.TransformDirection(Vector3.left);
+            if(justStartedLoop)
+            {
+                Main.WriteInfo("Opening eyes for the first time");
+                justStartedLoop = false;
+                EnableCamera();
+                ActivateCamera();
+                Locator.GetPlayerCameraController().CenterCameraOverSeconds(1.0f, true);
+            }
+            else
+            {
+                EnableCamera();
+            }
         }
 
         private void OnSwitchActiveCamera(OWCamera camera)
-        {
+        { 
             PreviousCamera = CurrentCamera;
             CurrentCamera = camera;
+
+            Main.WriteInfo($"Switched from {PreviousCamera.name} to {CurrentCamera.name}");
+
+            switch (PreviousCamera.name)
+            {
+                case "MapCamera":
+                    cameraModeLocked = false;
+                    break;
+                case "LandingCamera":
+                    cameraModeLocked = false;
+                    if (CameraActive && CameraEnabled)
+                    {
+                        ActivateCamera(false);
+                        OnSwitchActiveCamera(OWCamera);
+                    }
+                    break;
+                case "RemoteViewerCamera":
+                    cameraModeLocked = false;
+                    break;
+            }
+
+            switch (CurrentCamera.name)
+            {
+                case "PlayerCamera":
+                    if (CameraActive && CameraEnabled)
+                    {
+                        ActivateCamera(false);
+                        OnSwitchActiveCamera(OWCamera);
+                    }
+                    break;
+                case "MapCamera":
+                    cameraModeLocked = true;
+                    break;
+                case "LandingCamera":
+                    cameraModeLocked = true;
+                    break;
+                case "RemoteViewerCamera":
+                    cameraModeLocked = true;
+                    break;
+            }
         }
 
         public void EnableCamera()
         {
-            if (CameraEnabled) return;
+            if (CameraEnabled || OWCamera == null) return;
             // If you're quick you can go from sleeping right into roasting before your eyes fully open (enables 3rd person)
             if (isRoastingMarshmallow) return;
 
-            parent.WriteInfo($"Third person camera enabled");
+            Main.WriteInfo($"Third person camera enabled");
 
             CameraEnabled = true;
             if (CameraActive) ActivateCamera();
@@ -311,57 +356,59 @@ namespace ThirdPersonCamera
         {
             if (!CameraEnabled) return;
 
-            parent.WriteInfo($"Third person camera disabled");
+            Main.WriteInfo($"Third person camera disabled");
 
             CameraEnabled = false;
             DeactivateCamera();
         }
 
-        public void OnEnterMapView()
+        private void ActivateCamera(bool fireSwitchActiveCamera = true)
         {
-            CameraEnabled = false;
-        }
+            Main.WriteInfo("Activate third person camera");
 
-        public void OnExitMapView()
-        {
-            CameraEnabled = true;
-        }
-
-        private void ActivateCamera()
-        {
             CameraActive = true;
-            if (Locator.GetActiveCamera() == _OWCamera) return;
 
-            GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", _OWCamera);
+            try
+            {
+                if (fireSwitchActiveCamera && (OWCamera != Locator.GetActiveCamera() || justStartedLoop)) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", OWCamera);
+            }
+            catch (Exception)
+            {
+                Main.WriteWarning("Couldn't fire event");
+            }
+
             Locator.GetPlayerCamera().mainCamera.enabled = false;
             _camera.enabled = true;
 
             // Default the distance to the smallest possible value
-            float minDistance = _pilotingShip ? MIN_SHIP_DISTANCE : MIN_PLAYER_DISTANCE;
-            float maxDistance = _pilotingShip ? MAX_SHIP_DISTANCE : MAX_PLAYER_DISTANCE;
+            float minDistance = GetMinDistance();
+            float maxDistance = GetMaxDistance();
 
             _desiredDistance = Mathf.Clamp(_desiredDistance, minDistance, maxDistance);
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
-
-            SetCameraPivotPosition(!overTheShoulder || _pilotingShip);
 
             GlobalMessenger.FireEvent("ActivateThirdPersonCamera");
         }
 
         private void DeactivateCamera()
         {
+            Main.WriteInfo("Deactivate third person camera");
+
             // Only if the player chose this do we record it as inactive
             if (CameraEnabled) CameraActive = false;
 
-            if (Locator.GetActiveCamera() != _OWCamera) return;
-
-            GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", Locator.GetPlayerCamera());
+            try
+            {
+                if (Locator.GetActiveCamera() != Locator.GetPlayerCamera()) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", Locator.GetPlayerCamera());
+            }
+            catch (Exception) 
+            { 
+                Main.WriteWarning("Couldn't fire event"); 
+            }
 
             Locator.GetPlayerCamera().mainCamera.enabled = true;
             _camera.enabled = false;
             _distance = 0f;
-
-            SetCameraPivotPosition(true);
 
             GlobalMessenger.FireEvent("DeactivateThirdPersonCamera");
         }
@@ -421,8 +468,21 @@ namespace ThirdPersonCamera
             {
                 if (Locator.GetDeathManager().IsPlayerDying()) DisableCamera();
 
-                float maxDistance = _pilotingShip ? MAX_SHIP_DISTANCE : MAX_PLAYER_DISTANCE;
-                float minDistance = _pilotingShip ? MIN_SHIP_DISTANCE : MIN_PLAYER_DISTANCE;
+                /*
+                if (OWInput.IsNewlyPressed(InputLibrary.freeLook) && Main.IsThirdPerson() && !_pilotingShip)
+                {
+                    movementLocked = true;
+                    Locator.GetPlayerController().LockMovement(true);
+                }
+                if (OWInput.IsNewlyReleased(InputLibrary.freeLook) && movementLocked)
+                {
+                    movementLocked = false;
+                    Locator.GetPlayerController().UnlockMovement();
+                }
+                */
+
+                float maxDistance = GetMaxDistance();
+                float minDistance = GetMinDistance();
 
                 // If we change the direction we're scrolling
                 if (scroll * (_distance - _desiredDistance) > 0) _desiredDistance = _distance;
@@ -453,16 +513,21 @@ namespace ThirdPersonCamera
                 // When piloting we temporarily disable the raycast collision for the ship
                 if (_pilotingShip) Locator.GetShipBody().DisableCollisionDetection();
                 else Locator.GetPlayerBody().DisableCollisionDetection();
-                int layerMask = (1 << 0) | (1 << 9) | (1 << 10) | (1 << 22) | (1 << 27) | (1 << 28);
+                //int layerMask = (1 << 0) | (1 << 9) | (1 << 10) | (1 << 15) | (1 << 22) | (1 << 27) | (1 << 28);
+                int layerMask = OWLayerMask.physicalMask;
                 if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, _desiredDistance, layerMask))
                 {
-                    _distance = Mathf.Clamp(_distance, 0f, hitInfo.distance) * 0.9f; // Try to avoid seeing through curved walls
+                    //Main.WriteInfo($"{hitInfo.collider.gameObject.layer}");
+                    _distance = Mathf.Clamp(_distance, 0f, hitInfo.distance * 0.8f); // Try to avoid seeing through curved walls
                 }
                 if (_pilotingShip) Locator.GetShipBody().EnableCollisionDetection();
                 else Locator.GetPlayerBody().EnableCollisionDetection();
 
                 // Stop the camera going into your head even if it's inside a wall
-                if (_distance < minDistance) _distance = minDistance;
+                if (_distance < minDistance)
+                {
+                    _distance = minDistance;
+                }
 
                 // Finally, move the camera into place
                 _thirdPersonCamera.transform.position = origin + direction * _distance;
@@ -472,6 +537,11 @@ namespace ThirdPersonCamera
         public static Camera GetCamera()
         {
             return _camera;
+        }
+
+        public static bool IsPiloting()
+        {
+            return _pilotingShip;
         }
     }
 }
