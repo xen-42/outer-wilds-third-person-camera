@@ -301,6 +301,9 @@ namespace ThirdPersonCamera
                 case "RemoteViewerCamera":
                     cameraModeLocked = false;
                     break;
+                case "FREECAM":
+                    cameraModeLocked = false;
+                    break;
             }
 
             switch (CurrentCamera.name)
@@ -308,7 +311,7 @@ namespace ThirdPersonCamera
                 case "PlayerCamera":
                     if (CameraActive && CameraEnabled)
                     {
-                        ActivateCamera(false);
+                        ActivateCamera(true);
                         OnSwitchActiveCamera(OWCamera);
                     }
                     break;
@@ -319,6 +322,10 @@ namespace ThirdPersonCamera
                     cameraModeLocked = true;
                     break;
                 case "RemoteViewerCamera":
+                    cameraModeLocked = true;
+                    break;
+                case "FREECAM":
+                    CameraActive = false;
                     cameraModeLocked = true;
                     break;
             }
@@ -415,24 +422,23 @@ namespace ThirdPersonCamera
 
         public void Update()
         {
-            // If a keyboard/gamepad aren't plugged in then these are null
             bool toggle = false;
-            //bool toggleShoulder = false;
             if (Keyboard.current != null)
             {
                 toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
-                //toggleShoulder |= Keyboard.current[Key.B].wasReleasedThisFrame;
             }
             if (Gamepad.current != null)
             {
                 toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
-                //toggleShoulder |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadRight].wasReleasedThisFrame;
             }
 
             if (!CameraEnabled)
             {
-                if(toggle) Locator.GetPlayerAudioController().PlayNegativeUISound();
-                return;
+                if (toggle)
+                {
+                    Locator.GetPlayerAudioController().PlayNegativeUISound();
+                    toggle = false;
+                }
             }
 
             float scroll = -Mouse.current.scroll.ReadValue().y;
@@ -456,30 +462,9 @@ namespace ThirdPersonCamera
                 else Locator.GetPlayerAudioController().PlayNegativeUISound();
             }
 
-            /*
-            if(toggleShoulder)
-            {
-                overTheShoulder = !overTheShoulder;
-                SetCameraPivotPosition(!(overTheShoulder && parent.IsThirdPerson() && !_pilotingShip));
-            }
-            */
-
             if (CameraActive)
             {
                 if (Locator.GetDeathManager().IsPlayerDying()) DisableCamera();
-
-                /*
-                if (OWInput.IsNewlyPressed(InputLibrary.freeLook) && Main.IsThirdPerson() && !_pilotingShip)
-                {
-                    movementLocked = true;
-                    Locator.GetPlayerController().LockMovement(true);
-                }
-                if (OWInput.IsNewlyReleased(InputLibrary.freeLook) && movementLocked)
-                {
-                    movementLocked = false;
-                    Locator.GetPlayerController().UnlockMovement();
-                }
-                */
 
                 float maxDistance = GetMaxDistance();
                 float minDistance = GetMinDistance();
