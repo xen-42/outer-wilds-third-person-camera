@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace ThirdPersonCamera
 {
-    public class ScreenTextHandler
+    public class UIHandler
     {
         public static Text ShipText { get; private set; }
         public static Text TranslatorText { get; private set; }
@@ -23,8 +23,6 @@ namespace ThirdPersonCamera
         private static Text _signalScopeDistanceText;
         private static LineRenderer _waveformRenderer;
 
-        private bool _isPilotingShip = false;
-
         private bool _isTranslatorEquiped = false;
         private bool _isSignalScopeEquiped = false;
 
@@ -33,16 +31,17 @@ namespace ThirdPersonCamera
 
         private Vector3 _shipSigScopeLocalScale = Vector3.zero;
 
-        public ScreenTextHandler()
+        private bool initialized = false;
+
+        public UIHandler()
         {
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
-            GlobalMessenger.AddListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
             GlobalMessenger.AddListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
-
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
             GlobalMessenger.AddListener("GamePaused", new Callback(OnGamePaused));
             GlobalMessenger.AddListener("GameUnpaused", new Callback(OnGameUnpaused));
         }
@@ -52,11 +51,10 @@ namespace ThirdPersonCamera
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.RemoveListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
-            GlobalMessenger.RemoveListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
             GlobalMessenger.RemoveListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
-
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
             GlobalMessenger.RemoveListener("GamePaused", new Callback(OnGamePaused));
             GlobalMessenger.RemoveListener("GameUnpaused", new Callback(OnGameUnpaused));
         }
@@ -137,7 +135,7 @@ namespace ThirdPersonCamera
             _waveFormGameObject.transform.SetParent(ThirdPersonCamera.GetCamera().gameObject.transform);
             _waveFormGameObject.transform.position = _waveFormGameObject.transform.parent.position
                     + _waveFormGameObject.transform.parent.TransformDirection(Vector3.forward) * 200f
-                    + _waveFormGameObject.transform.parent.TransformDirection(Vector3.down) * 100f;
+                    + _waveFormGameObject.transform.parent.TransformDirection(Vector3.down) * 120f;
             _waveFormGameObject.transform.rotation = _waveFormGameObject.transform.parent.rotation;
             _waveFormGameObject.name = "ShipSignalScopeWaveform";
 
@@ -156,12 +154,12 @@ namespace ThirdPersonCamera
             _signalScopeText = myText3.AddComponent<Text>();
             _signalScopeText.font = font;
             _signalScopeText.text = "";
-            _signalScopeText.fontSize = 32;
+            _signalScopeText.fontSize = 24;
             _signalScopeText.alignment = TextAnchor.UpperCenter;
 
             // Text position
             RectTransform signalscopeRectTransform = _signalScopeText.GetComponent<RectTransform>();
-            signalscopeRectTransform.localPosition = new Vector3(0, -Screen.height / 2f, 0);
+            signalscopeRectTransform.localPosition = new Vector3(0, -Screen.height / 1.7f, 0);
             signalscopeRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
 
             // SignalScope Text
@@ -172,13 +170,15 @@ namespace ThirdPersonCamera
             _signalScopeDistanceText = myText4.AddComponent<Text>();
             _signalScopeDistanceText.font = font;
             _signalScopeDistanceText.text = "";
-            _signalScopeDistanceText.fontSize = 48;
+            _signalScopeDistanceText.fontSize = 32;
             _signalScopeDistanceText.alignment = TextAnchor.UpperCenter;
 
             // Text position
             RectTransform signalscopeDistanceRectTransform = _signalScopeDistanceText.GetComponent<RectTransform>();
             signalscopeDistanceRectTransform.localPosition = new Vector3(0, -Screen.height / 3f + 32, 0);
             signalscopeDistanceRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
+
+            initialized = true;
 
             SetSignalScopeUIVisible(false);
         }
@@ -192,14 +192,14 @@ namespace ThirdPersonCamera
                     _isTranslatorEquiped = true;
                     break;
                 case "ProbeLauncher":
-                    if (_isPilotingShip)
+                    if (PlayerState.AtFlightConsole())
                     {
                         _isShipProbeLauncherEquiped = true;
                         _shipProbeLauncherImage.gameObject.SetActive(Main.IsThirdPerson() && _isShipProbeLauncherPictureTaken);
                     }
                     break;
                 case "Signalscope":
-                    SetSignalScopeUIVisible(_isPilotingShip && Main.IsThirdPerson());
+                    SetSignalScopeUIVisible(PlayerState.AtFlightConsole() && Main.IsThirdPerson());
                     _isSignalScopeEquiped = true;
                     break;
             }
@@ -214,7 +214,7 @@ namespace ThirdPersonCamera
                     _isTranslatorEquiped = false;
                     break;
                 case "ProbeLauncher":
-                    if (_isPilotingShip) _shipProbeLauncherImage.gameObject.SetActive(false);
+                    if (PlayerState.AtFlightConsole()) _shipProbeLauncherImage.gameObject.SetActive(false);
                     _isShipProbeLauncherEquiped = false;
                     break;
                 case "Signalscope":
@@ -232,17 +232,8 @@ namespace ThirdPersonCamera
             _shipProbeLauncherImage.gameObject.SetActive(false);
         }
 
-        private void OnActivateThirdPersonCamera()
-        {
-            ShipText.gameObject.SetActive(_isPilotingShip);
-            TranslatorText.gameObject.SetActive(_isTranslatorEquiped);
-            SetSignalScopeUIVisible(_isPilotingShip && _isSignalScopeEquiped);
-            _shipProbeLauncherImage.gameObject.SetActive(_isPilotingShip && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
-        }
-
         private void OnExitFlightConsole()
         {
-            _isPilotingShip = false;
             ShipText.gameObject.SetActive(false);
             SetSignalScopeUIVisible(false);
             _shipProbeLauncherImage.gameObject.SetActive(false);
@@ -250,31 +241,54 @@ namespace ThirdPersonCamera
 
         private void OnEnterFlightConsole(OWRigidbody _)
         {
-            _isPilotingShip = true;
-            ShipText.gameObject.SetActive(Main.IsThirdPerson() && _isShipProbeLauncherPictureTaken);
+            ShipText.gameObject.SetActive(Main.IsThirdPerson());
+        }
+
+        private void OnSwitchActiveCamera(OWCamera camera)
+        {
+            if (camera.name == "MapCamera")
+            {
+                ShipText.gameObject.SetActive(false);
+                TranslatorText.gameObject.SetActive(false);
+                SetSignalScopeUIVisible(false);
+                _shipProbeLauncherImage.gameObject.SetActive(false);
+            }
+            if (camera.name == "ThirdPersonCamera")
+            {
+                ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
+                TranslatorText.gameObject.SetActive(_isTranslatorEquiped);
+                SetSignalScopeUIVisible(PlayerState.AtFlightConsole() && _isSignalScopeEquiped);
+                _shipProbeLauncherImage.gameObject.SetActive(PlayerState.AtFlightConsole() && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+            }
         }
 
         private void OnGamePaused()
         {
-            if (ShipText != null) ShipText.gameObject.SetActive(false);
-            //TranslatorText.gameObject.SetActive(false); Counts as paused when time freezes to read
+            if (!initialized) return;
+
+            ShipText.gameObject.SetActive(false);
+            _shipProbeLauncherImage.gameObject.SetActive(false);
+
             SetSignalScopeUIVisible(false);
-            if (_shipProbeLauncherImage != null) _shipProbeLauncherImage.gameObject.SetActive(false);
         }
 
         private void OnGameUnpaused()
         {
-            if(ShipText != null) ShipText.gameObject.SetActive(_isPilotingShip);
-            //TranslatorText.gameObject.SetActive(_isTranslatorEquiped);
-            SetSignalScopeUIVisible(_isPilotingShip && _isSignalScopeEquiped);
-            if(_shipProbeLauncherImage != null) _shipProbeLauncherImage.gameObject.SetActive(_isPilotingShip && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+            if (!initialized) return;
+            if (Locator.GetActiveCamera().name != "ThirdPersonCamera") return;
+
+            ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
+            _shipProbeLauncherImage.gameObject.SetActive(PlayerState.AtFlightConsole() && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+
+            SetSignalScopeUIVisible(PlayerState.AtFlightConsole() && _isSignalScopeEquiped && Main.IsThirdPerson());
         }
 
         private void SetSignalScopeUIVisible(bool visible)
         {
-            if(_signalScopeText != null) _signalScopeText.gameObject.SetActive(visible);
-            if (_signalScopeDistanceText != null) _signalScopeDistanceText.gameObject.SetActive(visible);
-            if (_waveformRenderer != null) _waveformRenderer.gameObject.SetActive(visible);
+            if (!initialized) return;
+            _signalScopeText.gameObject.SetActive(visible);
+            _signalScopeDistanceText.gameObject.SetActive(visible);
+            _waveformRenderer.gameObject.SetActive(visible);
 
             // Disappear the rest of the UI
             GameObject sigScopeDisplay = GameObject.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay");

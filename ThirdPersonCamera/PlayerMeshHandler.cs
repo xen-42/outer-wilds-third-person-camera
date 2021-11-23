@@ -21,6 +21,15 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
         }
 
+        public void OnDestroy()
+        {
+            GlobalMessenger.RemoveListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
+            GlobalMessenger.RemoveListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
+            GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
+            GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
+            GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
+        }
+
         private void OnDeactivateThirdPersonCamera()
         {
             SetArmVisibility(!_isToolHeld);

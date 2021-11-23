@@ -17,7 +17,7 @@ namespace ThirdPersonCamera
 
         private static Main SharedInstance;
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
-        public static ScreenTextHandler ScreenTextHandler { get; private set; }
+        public static UIHandler UIHandler { get; private set; }
         public static PlayerMeshHandler PlayerMeshHandler { get; private set; }
         public static ToolMaterialHandler ToolMaterialHandler { get; private set; }
         public static HUDHandler HUDHandler { get; private set; }
@@ -30,7 +30,7 @@ namespace ThirdPersonCamera
 
             // Helpers
             ThirdPersonCamera = new ThirdPersonCamera();
-            ScreenTextHandler = new ScreenTextHandler();
+            UIHandler = new UIHandler();
             PlayerMeshHandler = new PlayerMeshHandler();
             ToolMaterialHandler = new ToolMaterialHandler();
             HUDHandler = new HUDHandler();
@@ -51,11 +51,8 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("StartZoomIn", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("FinishRetroZoom", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<RoastingStickController>("OnEnterRoastingMode", typeof(Patches), nameof(Patches.OnRoastingStickActivate));
-
             ModHelper.HarmonyHelper.AddPrefix<QuantumObject>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.OnSwitchActiveCamera));
-
             ModHelper.HarmonyHelper.AddPostfix<TimelineObliterationController>("OnCrackEffectComplete", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-
             ModHelper.HarmonyHelper.AddPostfix<NomaiTranslatorProp>("Update", typeof(Patches), nameof(Patches.NomaiTranslaterPropUpdate));
             ModHelper.HarmonyHelper.AddPostfix<ShipNotificationDisplay>("Update", typeof(Patches), nameof(Patches.ShipNotificationDisplayUpdate));
             ModHelper.HarmonyHelper.AddPrefix<ReferenceFrameTracker>("GetPossibleReferenceFrame", typeof(Patches), nameof(Patches.GetPossibleReferenceFrame));
@@ -65,7 +62,6 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("Update", typeof(Patches), nameof(Patches.PlayerCameraControllerUpdate));
             ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("UpdateInput", typeof(Patches), nameof(Patches.UpdateInput));
             ModHelper.HarmonyHelper.AddPrefix<PlayerCharacterController>("UpdateTurning", typeof(Patches), nameof(Patches.UpdateTurning));
-
             ModHelper.HarmonyHelper.AddPostfix<ProbeLauncherUI>("OnTakeSnapshot", typeof(Patches), nameof(Patches.OnTakeSnapshot));
             ModHelper.HarmonyHelper.AddPrefix<QuantumObject>("IsLockedByProbeSnapshot", typeof(Patches), nameof(Patches.IsLockedByProbeSnapshot));
             ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateLabels", typeof(Patches), nameof(Patches.UpdateLabels));
@@ -85,6 +81,10 @@ namespace ThirdPersonCamera
             ModHelper.Events.Event -= OnEvent;
 
             ThirdPersonCamera.OnDestroy();
+            UIHandler.OnDestroy();
+            PlayerMeshHandler.OnDestroy();
+            ToolMaterialHandler.OnDestroy();
+            HUDHandler.OnDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -111,7 +111,7 @@ namespace ThirdPersonCamera
                 try
                 {
                     ThirdPersonCamera.Init();
-                    ScreenTextHandler.Init();
+                    UIHandler.Init();
                     HUDHandler.Init();
 
                     loaded = true;

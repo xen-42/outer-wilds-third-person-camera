@@ -18,8 +18,6 @@ namespace ThirdPersonCamera
 
         private GameObject cameraPivot;
 
-        private static bool _pilotingShip = false;
-
         private float _distance = 0f;
         private float _desiredDistance = 0f;
 
@@ -175,33 +173,23 @@ namespace ThirdPersonCamera
             CameraActive = true;
             JustStartedLoop = true;
 
-            _pilotingShip = false;
             _ejected = false;
 
             CurrentCamera = Locator.GetPlayerCamera();
-
-            Main.WriteInfo($"{CameraEnabled}, {CameraActive}, {JustStartedLoop}, {Locator.GetActiveCamera().name}");
         }
 
         private float GetMinDistance()
         {
-            if (_pilotingShip) return MIN_SHIP_DISTANCE;
+            if (PlayerState.AtFlightConsole()) return MIN_SHIP_DISTANCE;
             if (Locator.GetPlayerSuit().IsWearingSuit()) return MIN_PLAYER_SUIT_DISTANCE;
             else return MIN_PLAYER_DISTANCE;
         }
 
         private float GetMaxDistance()
         {
-            if (_pilotingShip) return MAX_SHIP_DISTANCE;
+            if (PlayerState.AtFlightConsole()) return MAX_SHIP_DISTANCE;
             if (Locator.GetPlayerSuit().IsWearingSuit()) return MAX_PLAYER_SUIT_DISTANCE;
             else return MAX_PLAYER_DISTANCE;
-        }
-
-        private float GetDefaultDistance()
-        {
-            if (_pilotingShip) return DEFAULT_SHIP_DISTANCE;
-            if (Locator.GetPlayerSuit().IsWearingSuit()) return DEFAULT_PLAYER_SUIT_DISTANCE;
-            else return DEFAULT_PLAYER_DISTANCE;
         }
 
         private void OnShipModuleDetached(ShipDetachableModule module)
@@ -231,14 +219,14 @@ namespace ThirdPersonCamera
 
         private void SetPilotingShip(bool piloting)
         {
-            _pilotingShip = piloting;
-
             // Ensure the distance is within bounds
             float minDistance = GetMinDistance();
             float maxDistance = GetMaxDistance();
 
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
-            _desiredDistance = GetDefaultDistance();
+            if (piloting) _desiredDistance = DEFAULT_SHIP_DISTANCE;
+            else if (Locator.GetPlayerSuit().IsWearingSuit()) _desiredDistance = DEFAULT_PLAYER_SUIT_DISTANCE;
+            else _desiredDistance = DEFAULT_PLAYER_DISTANCE; ;
         }
 
         private void OnRoastingStickActivate()
@@ -461,7 +449,7 @@ namespace ThirdPersonCamera
                 {
                     //ModHelper.Console.WriteLine($"Zooming from {distance} to {desiredDistance}", MessageType.Debug);
                     float sign = _distance < _desiredDistance ? 1 : -1;
-                    float camera_speed = CAMERA_SPEED * (_pilotingShip ? 2.5f : 1);
+                    float camera_speed = CAMERA_SPEED * (PlayerState.AtFlightConsole() ? 2.5f : 1);
                     _distance = Mathf.Clamp(_distance + sign * camera_speed * Time.deltaTime, 0f, maxDistance);
                     // Did we overshoot?
                     if ((_distance < _desiredDistance && sign == -1) || (_distance > _desiredDistance && sign == 1))
@@ -472,12 +460,12 @@ namespace ThirdPersonCamera
 
                 // For raycasting and also moving the camera
                 Vector3 origin = cameraPivot.transform.position;
-                if (_pilotingShip && !_ejected) origin = Locator.GetShipTransform().position + 10f * Locator.GetShipTransform().TransformDirection(Vector3.up);
+                if (PlayerState.AtFlightConsole() && !_ejected) origin = Locator.GetShipTransform().position + 10f * Locator.GetShipTransform().TransformDirection(Vector3.up);
 
                 Vector3 direction = _thirdPersonCamera.transform.parent.transform.TransformDirection(Vector3.back);
 
                 // When piloting we temporarily disable the raycast collision for the ship
-                if (_pilotingShip) Locator.GetShipBody().DisableCollisionDetection();
+                if (PlayerState.AtFlightConsole()) Locator.GetShipBody().DisableCollisionDetection();
                 else Locator.GetPlayerBody().DisableCollisionDetection();
                 //int layerMask = (1 << 0) | (1 << 9) | (1 << 10) | (1 << 15) | (1 << 22) | (1 << 27) | (1 << 28);
                 int layerMask = OWLayerMask.physicalMask;
@@ -486,7 +474,7 @@ namespace ThirdPersonCamera
                     //Main.WriteInfo($"{hitInfo.collider.gameObject.layer}");
                     _distance = Mathf.Clamp(_distance, 0f, hitInfo.distance * 0.8f); // Try to avoid seeing through curved walls
                 }
-                if (_pilotingShip) Locator.GetShipBody().EnableCollisionDetection();
+                if (PlayerState.AtFlightConsole()) Locator.GetShipBody().EnableCollisionDetection();
                 else Locator.GetPlayerBody().EnableCollisionDetection();
 
                 // Stop the camera going into your head even if it's inside a wall
@@ -503,11 +491,6 @@ namespace ThirdPersonCamera
         public static Camera GetCamera()
         {
             return _camera;
-        }
-
-        public static bool IsPiloting()
-        {
-            return _pilotingShip;
         }
     }
 }

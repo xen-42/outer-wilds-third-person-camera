@@ -77,7 +77,7 @@ namespace ThirdPersonCamera
 
         public static void NomaiTranslaterPropUpdate(NomaiTranslatorProp __instance, Text ____textField)
         {
-            Text screenText = ScreenTextHandler.TranslatorText;
+            Text screenText = UIHandler.TranslatorText;
             if (screenText != null) screenText.text = ____textField.text;
         }
 
@@ -85,7 +85,7 @@ namespace ThirdPersonCamera
         {
             if (__instance.name != "ConsoleDisplay") return;
 
-            Text screenText = ScreenTextHandler.ShipText;
+            Text screenText = UIHandler.ShipText;
 
             string text = "";
 
@@ -102,7 +102,7 @@ namespace ThirdPersonCamera
         {
             // Stops you from targeting your ship while piloting it
             if (____possibleReferenceFrame.GetOWRigidBody().name == "Player_Body") return false;
-            if (ThirdPersonCamera.IsPiloting() && ____possibleReferenceFrame.GetOWRigidBody().name == "Ship_Body") return false;
+            if (PlayerState.AtFlightConsole() && ____possibleReferenceFrame.GetOWRigidBody().name == "Ship_Body") return false;
             return true;
         }
 
@@ -110,7 +110,7 @@ namespace ThirdPersonCamera
         {
             // Don't let the raycast get the player or (sometimes) the ship
             Locator.GetPlayerBody().DisableCollisionDetection();
-            if (ThirdPersonCamera.IsPiloting()) Locator.GetShipBody().DisableCollisionDetection();
+            if (PlayerState.AtFlightConsole()) Locator.GetShipBody().DisableCollisionDetection();
         }
 
         public static void PostFindReferenceFrameInLineOfSight()
@@ -173,7 +173,7 @@ namespace ThirdPersonCamera
                 if (____degreesX < -180f) ____degreesX += 360f;
             }
 
-            if (!Main.IsThirdPerson() || ThirdPersonCamera.IsPiloting()) return true;
+            if (!Main.IsThirdPerson() || PlayerState.AtFlightConsole()) return true;
 
             if (OWInput.IsNewlyReleased(InputLibrary.freeLook, InputMode.All))
             {
@@ -199,13 +199,13 @@ namespace ThirdPersonCamera
         {
             if (camera.GetID() == ProbeCamera.ID.Reverse)
             {
-                ScreenTextHandler.SetProbeLauncherTexture(____rearSnapshotOverlay);
+                UIHandler.SetProbeLauncherTexture(____rearSnapshotOverlay);
             }
             else
             {
-                ScreenTextHandler.SetProbeLauncherTexture(____frontSnapshotOverlay);
+                UIHandler.SetProbeLauncherTexture(____frontSnapshotOverlay);
             }
-            ScreenTextHandler.SetProbeLauncherTexture(snapshot);
+            UIHandler.SetProbeLauncherTexture(snapshot);
         }
 
         public static bool IsLockedByProbeSnapshot(QuantumObject __instance, bool ____visibleInProbeSnapshot, ref bool __result)
@@ -221,19 +221,19 @@ namespace ThirdPersonCamera
 
         public static void UpdateLabels(SignalscopeUI __instance, Text ____distanceLabel, Text ____signalscopeLabel)
         {
-            ScreenTextHandler.SetSignalScopeLabel(____signalscopeLabel.text, ____distanceLabel.text);
+            UIHandler.SetSignalScopeLabel(____signalscopeLabel.text, ____distanceLabel.text);
         }
 
         public static void UpdateWaveform(SignalscopeUI __instance, Vector3[] ____linePoints)
         {
-            ScreenTextHandler.SetSignalScopeWaveform(____linePoints);
+            UIHandler.SetSignalScopeWaveform(____linePoints);
         }
 
         public static void UpdateBrackets(SignalscopeReticleController __instance, Transform ____reticuleBracketsTransform, List<SkinnedMeshRenderer> ____clonedLeftBrackets,
             List<SkinnedMeshRenderer> ____clonedRightBrackets)
         {
             Transform parent = PlayerState.AtFlightConsole() && Main.IsThirdPerson() ?
-                    ScreenTextHandler.SigScopeReticuleParent.transform : ____reticuleBracketsTransform;
+                    UIHandler.SigScopeReticuleParent.transform : ____reticuleBracketsTransform;
                     //Locator.GetShipTransform() : ____reticuleBracketsTransform;
             for (int i = 0; i < ____clonedLeftBrackets.Count; i++)
             {
