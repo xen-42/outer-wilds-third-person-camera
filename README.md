@@ -9,7 +9,7 @@ Scroll in/out to zoom in/out.
 Known issues:
 - HUD way too big at low screen resolution
 - SignalScope frequency and minimap don't show in third person
-- Tool rotate with you when using free look
+- Tools rotate with you when using free look
 
 Wishlist (would be nice):
 - Actually catch fire in fires
