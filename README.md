@@ -6,17 +6,14 @@ Press V or the left directional button (Gamepad) to toggle between 1st and 3rd p
 
 Scroll in/out to zoom in/out.
 
-TODO:
-- Make signalscope, probe launcher work in ship (need to add GUI)
-
 Known issues:
 - HUD way too big at low screen resolution
-- SignalScope frequency and map HUD don't show in third person
-- Solanum's rocks textures get messed up when switching cameras
-- Weird orb appears around your head if you go in ghost matter
+- SignalScope frequency and minimap don't show in third person
+- Tool rotate with you when using free look
 
 Wishlist (would be nice):
 - Actually catch fire in fires
 - Allow 3rd person in the dream (need a new player model)
+- Make projection pools work in 3D
 
 ![image](https://user-images.githubusercontent.com/22628069/142536103-386cda90-2d35-4c95-8e98-05e7ab2081cc.png)
