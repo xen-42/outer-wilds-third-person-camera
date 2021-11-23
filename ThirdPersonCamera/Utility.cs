@@ -22,5 +22,11 @@ namespace ThirdPersonCamera
             if (objects.Count == 0) return null;
             return objects.ToArray();
         }
+
+        public static string GetPath(Transform current)
+        {
+            if (current.parent == null) return "/" + current.name;
+            return GetPath(current.parent) + "/" + current.name;
+        }
     }
 }

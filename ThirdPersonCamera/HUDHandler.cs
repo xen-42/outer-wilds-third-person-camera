@@ -22,6 +22,11 @@ namespace ThirdPersonCamera
             GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
         }
 
+        public void Init()
+        {
+
+        }
+
         private void OnActivateThirdPersonCamera()
         {
             ShowHelmetHUD(!_isPilotingShip);
@@ -70,11 +75,12 @@ namespace ThirdPersonCamera
 
         private void ShowHelmetHUD(bool visible)
         {
-            Canvas UICanvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas").GetComponent<Canvas>();
-            UICanvas.renderMode = visible && Locator.GetPlayerSuit().IsWearingHelmet() ? RenderMode.ScreenSpaceOverlay : RenderMode.ScreenSpaceCamera;
-            foreach (Canvas canvas in GameObject.Find("PlayerHUD/HelmetOffUI").GetComponentsInChildren<Canvas>())
+            Canvas UICanvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas")?.GetComponent<Canvas>();
+            if(UICanvas != null) UICanvas.renderMode = visible && Locator.GetPlayerSuit().IsWearingHelmet() ? RenderMode.ScreenSpaceOverlay : RenderMode.ScreenSpaceCamera;
+
+            foreach (Canvas canvas in GameObject.Find("PlayerHUD/HelmetOffUI")?.GetComponentsInChildren<Canvas>())
             {
-                canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
+                if(canvas != null) canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
             }
 
             // Get rid of 2D helmet stuff
@@ -104,10 +110,10 @@ namespace ThirdPersonCamera
             }
 
             /*
-            Main.WriteInfo("Writing Canvas names");
+            Main.WriteInfo("WRITING CANVAS NAMES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             foreach(Canvas c in GameObject.FindObjectsOfType<Canvas>())
             {
-                Main.WriteInfo($"{c.name}, {c.renderMode}, {c.gameObject.name}, {c.worldCamera?.name}");
+                Main.WriteInfo($"{c.name}, {c.renderMode}, {c.worldCamera?.name}, {Utility.GetPath(c.transform)}");
             }
             */
         }

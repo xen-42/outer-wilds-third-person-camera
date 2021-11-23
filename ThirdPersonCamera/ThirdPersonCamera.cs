@@ -48,7 +48,7 @@ namespace ThirdPersonCamera
 
         private bool cameraModeLocked = false;
 
-        private bool justStartedLoop = true;
+        public bool JustStartedLoop = true;
 
 
         public static OWCamera CurrentCamera { get; private set; }
@@ -86,8 +86,6 @@ namespace ThirdPersonCamera
             GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
             GlobalMessenger.AddListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
 
-            GlobalMessenger.AddListener("FinishOpenEyes", new Callback(OnFinishOpenEyes));
-
             // Different behaviour for certain tools
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
@@ -117,7 +115,6 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.RemoveListener("FinishOpenEyes", new Callback(OnFinishOpenEyes));
 
             GlobalMessenger.RemoveListener("StartViewingProjector", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
@@ -176,14 +173,14 @@ namespace ThirdPersonCamera
             // Now loaded but we default to being disabled
             CameraEnabled = false;
             CameraActive = true;
-            justStartedLoop = true;
+            JustStartedLoop = true;
 
             _pilotingShip = false;
             _ejected = false;
 
             CurrentCamera = Locator.GetPlayerCamera();
 
-            Main.WriteInfo($"{CameraEnabled}, {CameraActive}, {justStartedLoop}, {Locator.GetActiveCamera().name}");
+            Main.WriteInfo($"{CameraEnabled}, {CameraActive}, {JustStartedLoop}, {Locator.GetActiveCamera().name}");
         }
 
         private float GetMinDistance()
@@ -214,12 +211,12 @@ namespace ThirdPersonCamera
 
         private void OnToolEquiped(PlayerTool tool)
         {
-            if (_pilotingShip) DisableCamera();
+            //if (_pilotingShip) DisableCamera();
         }
 
         private void OnToolUnequiped(PlayerTool tool)
         {
-            if (_pilotingShip) EnableCamera();
+            //if (_pilotingShip) EnableCamera();
         }
 
         private void OnExitFlightConsole()
@@ -260,22 +257,6 @@ namespace ThirdPersonCamera
             GameObject stick = GameObject.Find("Stick_Root");
             if (stick != null) stick.transform.localScale = new Vector3(0, 0, 0);
             else Main.WriteWarning("Can't find stick");
-        }
-
-        private void OnFinishOpenEyes()
-        {
-            if(justStartedLoop)
-            {
-                Main.WriteInfo("Opening eyes for the first time");
-                justStartedLoop = false;
-                EnableCamera();
-                ActivateCamera();
-                Locator.GetPlayerCameraController().CenterCameraOverSeconds(1.0f, true);
-            }
-            else
-            {
-                EnableCamera();
-            }
         }
 
         private void OnSwitchActiveCamera(OWCamera camera)
@@ -369,7 +350,7 @@ namespace ThirdPersonCamera
             DeactivateCamera();
         }
 
-        private void ActivateCamera(bool fireSwitchActiveCamera = true)
+        public void ActivateCamera(bool fireSwitchActiveCamera = true)
         {
             Main.WriteInfo("Activate third person camera");
 
@@ -377,7 +358,7 @@ namespace ThirdPersonCamera
 
             try
             {
-                if (fireSwitchActiveCamera && (OWCamera != Locator.GetActiveCamera() || justStartedLoop)) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", OWCamera);
+                if (fireSwitchActiveCamera && (OWCamera != Locator.GetActiveCamera() || JustStartedLoop)) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", OWCamera);
             }
             catch (Exception)
             {
@@ -397,7 +378,7 @@ namespace ThirdPersonCamera
             GlobalMessenger.FireEvent("ActivateThirdPersonCamera");
         }
 
-        private void DeactivateCamera()
+        public void DeactivateCamera()
         {
             Main.WriteInfo("Deactivate third person camera");
 

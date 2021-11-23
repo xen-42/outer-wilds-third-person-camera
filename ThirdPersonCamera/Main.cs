@@ -66,6 +66,12 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("UpdateInput", typeof(Patches), nameof(Patches.UpdateInput));
             ModHelper.HarmonyHelper.AddPrefix<PlayerCharacterController>("UpdateTurning", typeof(Patches), nameof(Patches.UpdateTurning));
 
+            ModHelper.HarmonyHelper.AddPostfix<ProbeLauncherUI>("OnTakeSnapshot", typeof(Patches), nameof(Patches.OnTakeSnapshot));
+            ModHelper.HarmonyHelper.AddPrefix<QuantumObject>("IsLockedByProbeSnapshot", typeof(Patches), nameof(Patches.IsLockedByProbeSnapshot));
+            ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateLabels", typeof(Patches), nameof(Patches.UpdateLabels));
+            ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateWaveform", typeof(Patches), nameof(Patches.UpdateWaveform));
+            ModHelper.HarmonyHelper.AddPostfix<SignalscopeReticleController>("UpdateBrackets", typeof(Patches), nameof(Patches.UpdateBrackets));
+
             // Events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
 
@@ -106,6 +112,8 @@ namespace ThirdPersonCamera
                 {
                     ThirdPersonCamera.Init();
                     ScreenTextHandler.Init();
+                    HUDHandler.Init();
+
                     loaded = true;
 
                     if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
@@ -117,9 +125,9 @@ namespace ThirdPersonCamera
                     GameObject probeLauncher = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncher>().gameObject;
                     probeLauncher.layer = 0;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    WriteError("Init failed");
+                    WriteError($"Init failed. {e.Message}. {e.StackTrace}");
                 }
             }
         }
@@ -137,6 +145,22 @@ namespace ThirdPersonCamera
         public static bool IsThirdPerson()
         {
             return ThirdPersonCamera.CameraEnabled && ThirdPersonCamera.CameraActive;
+        }
+
+        public static void OnFinishOpenEyes()
+        {
+            if (ThirdPersonCamera.JustStartedLoop)
+            {
+                Main.WriteInfo("Opening eyes for the first time");
+                ThirdPersonCamera.JustStartedLoop = false;
+                ThirdPersonCamera.EnableCamera();
+                ThirdPersonCamera.ActivateCamera();
+                Locator.GetPlayerCameraController().CenterCameraOverSeconds(1.0f, true);
+            }
+            else
+            {
+                ThirdPersonCamera.EnableCamera();
+            }
         }
 
         public static void WriteError(string msg)

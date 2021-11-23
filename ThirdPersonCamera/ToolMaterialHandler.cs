@@ -86,6 +86,7 @@ namespace ThirdPersonCamera
                 foreach (Material m in meshRenderer.materials)
                 {
                     if (m.name.Contains("NOM")) continue; // Don't want to mess up scroll materials
+                    Main.WriteInfo($"{m.name}");
                     if (thirdPerson && m.renderQueue >= 2000) m.renderQueue -= 2000;
                     else if (!thirdPerson && m.renderQueue < 2000) m.renderQueue += 2000;
                 }

@@ -12,16 +12,26 @@ namespace ThirdPersonCamera
 {
     public class ScreenTextHandler
     {
-        private static readonly Regex noWhitespace = new Regex(@"\s+");
-
-        private List<string> _shipNotifications = new List<string>();
-
         public static Text ShipText { get; private set; }
-        public static Text TranslatorText { get; private set; } 
+        public static Text TranslatorText { get; private set; }
+
+        public static GameObject SigScopeReticuleParent;
+
+        private static Image _shipProbeLauncherImage;
+
+        private static Text _signalScopeText;
+        private static Text _signalScopeDistanceText;
+        private static LineRenderer _waveformRenderer;
 
         private bool _isPilotingShip = false;
 
         private bool _isTranslatorEquiped = false;
+        private bool _isSignalScopeEquiped = false;
+
+        private static bool _isShipProbeLauncherPictureTaken = false;
+        private static bool _isShipProbeLauncherEquiped = false;
+
+        private Vector3 _shipSigScopeLocalScale = Vector3.zero;
 
         public ScreenTextHandler()
         {
@@ -31,6 +41,10 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
+            GlobalMessenger.AddListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
+
+            GlobalMessenger.AddListener("GamePaused", new Callback(OnGamePaused));
+            GlobalMessenger.AddListener("GameUnpaused", new Callback(OnGameUnpaused));
         }
 
         public void OnDestroy()
@@ -41,6 +55,10 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
+            GlobalMessenger.RemoveListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
+
+            GlobalMessenger.RemoveListener("GamePaused", new Callback(OnGamePaused));
+            GlobalMessenger.RemoveListener("GameUnpaused", new Callback(OnGameUnpaused));
         }
 
         public void Init()
@@ -51,6 +69,7 @@ namespace ThirdPersonCamera
             GameObject canvasObject = new GameObject();
             canvasObject.name = "ThirdPersonCanvas";
             canvasObject.AddComponent<Canvas>();
+            canvasObject.transform.SetParent(ThirdPersonCamera.GetCamera().transform);
 
             Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -92,48 +111,213 @@ namespace ThirdPersonCamera
             // Start inactive
             ShipText.gameObject.SetActive(false);
             TranslatorText.gameObject.SetActive(false);
+
+            // Ship probe camera
+            GameObject imgObject = new GameObject("ShipProbeLauncherImage");
+
+            RectTransform probeLauncherRectTransform = imgObject.AddComponent<RectTransform>();
+            probeLauncherRectTransform.transform.SetParent(canvas.transform);
+            probeLauncherRectTransform.localScale = Vector3.one;
+            probeLauncherRectTransform.anchoredPosition = new Vector2(600f, 250f);
+            probeLauncherRectTransform.sizeDelta = new Vector2(400, 400);
+
+            _shipProbeLauncherImage = imgObject.AddComponent<Image>();
+            imgObject.transform.SetParent(canvas.transform);
+            imgObject.SetActive(false);
+
+            // SignalScope reticle
+            SigScopeReticuleParent = new GameObject();
+            Transform parent = ThirdPersonCamera.GetCamera().transform;
+            SigScopeReticuleParent.transform.parent = parent;
+            SigScopeReticuleParent.transform.rotation = parent.rotation;
+            SigScopeReticuleParent.transform.position = parent.position + parent.TransformDirection(Vector3.forward) * 2f;
+
+            // Signalscope line renderer
+            GameObject _waveFormGameObject = new GameObject();
+            _waveFormGameObject.transform.SetParent(ThirdPersonCamera.GetCamera().gameObject.transform);
+            _waveFormGameObject.transform.position = _waveFormGameObject.transform.parent.position
+                    + _waveFormGameObject.transform.parent.TransformDirection(Vector3.forward) * 200f
+                    + _waveFormGameObject.transform.parent.TransformDirection(Vector3.down) * 100f;
+            _waveFormGameObject.transform.rotation = _waveFormGameObject.transform.parent.rotation;
+            _waveFormGameObject.name = "ShipSignalScopeWaveform";
+
+            var material = GameObject.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay").GetComponentInChildren<LineRenderer>().material;
+
+            _waveformRenderer = _waveFormGameObject.AddComponent<LineRenderer>();
+            _waveformRenderer.positionCount = 256;
+            _waveformRenderer.material = material;
+            _waveformRenderer.useWorldSpace = false;
+
+            // SignalScope Text
+            GameObject myText3 = new GameObject();
+            myText3.transform.SetParent(canvas.transform);
+            myText3.name = "ShipSignalScopeText";
+
+            _signalScopeText = myText3.AddComponent<Text>();
+            _signalScopeText.font = font;
+            _signalScopeText.text = "";
+            _signalScopeText.fontSize = 32;
+            _signalScopeText.alignment = TextAnchor.UpperCenter;
+
+            // Text position
+            RectTransform signalscopeRectTransform = _signalScopeText.GetComponent<RectTransform>();
+            signalscopeRectTransform.localPosition = new Vector3(0, -Screen.height / 2f, 0);
+            signalscopeRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
+
+            // SignalScope Text
+            GameObject myText4 = new GameObject();
+            myText4.transform.SetParent(canvas.transform);
+            myText4.name = "ShipSignalScopeDistanceText";
+
+            _signalScopeDistanceText = myText4.AddComponent<Text>();
+            _signalScopeDistanceText.font = font;
+            _signalScopeDistanceText.text = "";
+            _signalScopeDistanceText.fontSize = 48;
+            _signalScopeDistanceText.alignment = TextAnchor.UpperCenter;
+
+            // Text position
+            RectTransform signalscopeDistanceRectTransform = _signalScopeDistanceText.GetComponent<RectTransform>();
+            signalscopeDistanceRectTransform.localPosition = new Vector3(0, -Screen.height / 3f + 32, 0);
+            signalscopeDistanceRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
+
+            SetSignalScopeUIVisible(false);
         }
 
         private void OnToolEquiped(PlayerTool t)
         {
-            if (t.name == "NomaiTranslatorProp")
+            switch(t.name)
             {
-                TranslatorText.gameObject.SetActive(Main.IsThirdPerson());
-                _isTranslatorEquiped = true;
+                case "NomaiTranslatorProp":
+                    TranslatorText.gameObject.SetActive(Main.IsThirdPerson());
+                    _isTranslatorEquiped = true;
+                    break;
+                case "ProbeLauncher":
+                    if (_isPilotingShip)
+                    {
+                        _isShipProbeLauncherEquiped = true;
+                        _shipProbeLauncherImage.gameObject.SetActive(Main.IsThirdPerson() && _isShipProbeLauncherPictureTaken);
+                    }
+                    break;
+                case "Signalscope":
+                    SetSignalScopeUIVisible(_isPilotingShip && Main.IsThirdPerson());
+                    _isSignalScopeEquiped = true;
+                    break;
             }
         }
 
         private void OnToolUnequiped(PlayerTool t)
         {
-            if (t.name == "NomaiTranslatorProp")
+            switch (t.name)
             {
-                TranslatorText.gameObject.SetActive(false);
-                _isTranslatorEquiped = false;
+                case "NomaiTranslatorProp":
+                    TranslatorText.gameObject.SetActive(false);
+                    _isTranslatorEquiped = false;
+                    break;
+                case "ProbeLauncher":
+                    if (_isPilotingShip) _shipProbeLauncherImage.gameObject.SetActive(false);
+                    _isShipProbeLauncherEquiped = false;
+                    break;
+                case "Signalscope":
+                    SetSignalScopeUIVisible(false);
+                    _isSignalScopeEquiped = false;
+                    break;
             }
         }
 
-        public void OnDeactivateThirdPersonCamera()
+        private void OnDeactivateThirdPersonCamera()
         {
             ShipText.gameObject.SetActive(false);
             TranslatorText.gameObject.SetActive(false);
+            SetSignalScopeUIVisible(false);
+            _shipProbeLauncherImage.gameObject.SetActive(false);
         }
 
-        public void OnActivateThirdPersonCamera()
+        private void OnActivateThirdPersonCamera()
         {
             ShipText.gameObject.SetActive(_isPilotingShip);
             TranslatorText.gameObject.SetActive(_isTranslatorEquiped);
+            SetSignalScopeUIVisible(_isPilotingShip && _isSignalScopeEquiped);
+            _shipProbeLauncherImage.gameObject.SetActive(_isPilotingShip && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
         }
 
-        public void OnExitFlightConsole()
+        private void OnExitFlightConsole()
         {
             _isPilotingShip = false;
             ShipText.gameObject.SetActive(false);
+            SetSignalScopeUIVisible(false);
+            _shipProbeLauncherImage.gameObject.SetActive(false);
         }
 
-        public void OnEnterFlightConsole(OWRigidbody _)
+        private void OnEnterFlightConsole(OWRigidbody _)
         {
             _isPilotingShip = true;
-            ShipText.gameObject.SetActive(Main.IsThirdPerson());
+            ShipText.gameObject.SetActive(Main.IsThirdPerson() && _isShipProbeLauncherPictureTaken);
+        }
+
+        private void OnGamePaused()
+        {
+            if (ShipText != null) ShipText.gameObject.SetActive(false);
+            //TranslatorText.gameObject.SetActive(false); Counts as paused when time freezes to read
+            SetSignalScopeUIVisible(false);
+            if (_shipProbeLauncherImage != null) _shipProbeLauncherImage.gameObject.SetActive(false);
+        }
+
+        private void OnGameUnpaused()
+        {
+            if(ShipText != null) ShipText.gameObject.SetActive(_isPilotingShip);
+            //TranslatorText.gameObject.SetActive(_isTranslatorEquiped);
+            SetSignalScopeUIVisible(_isPilotingShip && _isSignalScopeEquiped);
+            if(_shipProbeLauncherImage != null) _shipProbeLauncherImage.gameObject.SetActive(_isPilotingShip && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+        }
+
+        private void SetSignalScopeUIVisible(bool visible)
+        {
+            if(_signalScopeText != null) _signalScopeText.gameObject.SetActive(visible);
+            if (_signalScopeDistanceText != null) _signalScopeDistanceText.gameObject.SetActive(visible);
+            if (_waveformRenderer != null) _waveformRenderer.gameObject.SetActive(visible);
+
+            // Disappear the rest of the UI
+            GameObject sigScopeDisplay = GameObject.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay");
+            if (sigScopeDisplay != null)
+            {
+                if(_shipSigScopeLocalScale == Vector3.zero) _shipSigScopeLocalScale = sigScopeDisplay.transform.localScale;
+                sigScopeDisplay.transform.localScale = visible ? Vector3.zero : _shipSigScopeLocalScale;
+            }
+        }
+
+        private void OnProbeSnapshotRemoved()
+        {
+            _isShipProbeLauncherPictureTaken = false;
+            if(_shipProbeLauncherImage != null) _shipProbeLauncherImage.gameObject.SetActive(false);
+        }
+
+        public static void SetProbeLauncherTexture(Texture2D texture)
+        {
+            _isShipProbeLauncherPictureTaken = true;
+
+            _shipProbeLauncherImage.material.SetTexture("_MainTex", texture);
+            _shipProbeLauncherImage.SetMaterialDirty();
+            _shipProbeLauncherImage.gameObject.SetActive(_isShipProbeLauncherEquiped && Main.IsThirdPerson());
+        }
+
+        public static void SetProbeLauncherTexture(RenderTexture texture)
+        {
+            _isShipProbeLauncherPictureTaken = true;
+
+            _shipProbeLauncherImage.material.SetTexture("_MainTex", texture);
+            _shipProbeLauncherImage.SetMaterialDirty();
+            _shipProbeLauncherImage.gameObject.SetActive(_isShipProbeLauncherEquiped && Main.IsThirdPerson());
+        }
+
+        public static void SetSignalScopeLabel(string signalscopeText, string distanceText)
+        {
+            _signalScopeText.text = "FREQUENCY:\n" + signalscopeText;
+            _signalScopeDistanceText.text = distanceText;
+        }
+
+        public static void SetSignalScopeWaveform(Vector3[] linePoints)
+        {
+            _waveformRenderer.SetPositions(linePoints);
         }
     }
 }

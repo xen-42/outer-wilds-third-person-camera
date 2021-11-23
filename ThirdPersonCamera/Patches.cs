@@ -23,7 +23,7 @@ namespace ThirdPersonCamera
 
         public static void OnFinishOpenEyes()
         {
-            GlobalMessenger.FireEvent("FinishOpenEyes");
+            Main.OnFinishOpenEyes();
         }
 
         public static void EquipTool(PlayerTool __instance)
@@ -193,6 +193,54 @@ namespace ThirdPersonCamera
         {
             // Return false if turning is locked (we're using freelook)
             return !(Main.IsThirdPerson() && OWInput.IsPressed(InputLibrary.freeLook));
+        }
+
+        public static void OnTakeSnapshot(ProbeLauncherUI __instance, ProbeCamera camera, RenderTexture snapshot, Texture2D ____rearSnapshotOverlay, Texture2D ____frontSnapshotOverlay)
+        {
+            if (camera.GetID() == ProbeCamera.ID.Reverse)
+            {
+                ScreenTextHandler.SetProbeLauncherTexture(____rearSnapshotOverlay);
+            }
+            else
+            {
+                ScreenTextHandler.SetProbeLauncherTexture(____frontSnapshotOverlay);
+            }
+            ScreenTextHandler.SetProbeLauncherTexture(snapshot);
+        }
+
+        public static bool IsLockedByProbeSnapshot(QuantumObject __instance, bool ____visibleInProbeSnapshot, ref bool __result)
+        {
+            if (Main.IsThirdPerson())
+            {
+                __result = ____visibleInProbeSnapshot && Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe;
+                return false;
+            }
+
+            return true;
+        }
+
+        public static void UpdateLabels(SignalscopeUI __instance, Text ____distanceLabel, Text ____signalscopeLabel)
+        {
+            ScreenTextHandler.SetSignalScopeLabel(____signalscopeLabel.text, ____distanceLabel.text);
+        }
+
+        public static void UpdateWaveform(SignalscopeUI __instance, Vector3[] ____linePoints)
+        {
+            ScreenTextHandler.SetSignalScopeWaveform(____linePoints);
+        }
+
+        public static void UpdateBrackets(SignalscopeReticleController __instance, Transform ____reticuleBracketsTransform, List<SkinnedMeshRenderer> ____clonedLeftBrackets,
+            List<SkinnedMeshRenderer> ____clonedRightBrackets)
+        {
+            Transform parent = PlayerState.AtFlightConsole() && Main.IsThirdPerson() ?
+                    ScreenTextHandler.SigScopeReticuleParent.transform : ____reticuleBracketsTransform;
+                    //Locator.GetShipTransform() : ____reticuleBracketsTransform;
+            for (int i = 0; i < ____clonedLeftBrackets.Count; i++)
+            {
+                ____clonedLeftBrackets[i].transform.parent = parent;
+                ____clonedRightBrackets[i].transform.parent = parent;
+            }
+            //Main.WriteInfo($"{Utility.GetPath(____reticuleBracketsTransform)}, {____reticuleBracketsTransform.position}, {____reticuleBracketsTransform.rotation}");
         }
     }
 }
