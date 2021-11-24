@@ -8,7 +8,7 @@ Scroll in/out to zoom in/out.
 
 Known issues:
 - HUD way too big at low screen resolution
-- SignalScope frequency and minimap don't show in third person
+- Signalscope waveform and minimap don't show in third person
 - Tools rotate with you when using free look
 
 Wishlist (would be nice):
