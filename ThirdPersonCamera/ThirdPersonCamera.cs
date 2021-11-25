@@ -343,6 +343,10 @@ namespace ThirdPersonCamera
             Main.WriteInfo("Activate third person camera");
 
             CameraActive = true;
+            GlobalMessenger.FireEvent("ActivateThirdPersonCamera");
+
+            // Don't actually change camera because here we just move it
+            if (CurrentCamera.name.Equals("RemoteViewerCamera")) return;
 
             try
             {
@@ -362,8 +366,6 @@ namespace ThirdPersonCamera
 
             _desiredDistance = Mathf.Clamp(_desiredDistance, minDistance, maxDistance);
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
-
-            GlobalMessenger.FireEvent("ActivateThirdPersonCamera");
         }
 
         public void DeactivateCamera()
@@ -372,6 +374,11 @@ namespace ThirdPersonCamera
 
             // Only if the player chose this do we record it as inactive
             if (CameraEnabled) CameraActive = false;
+
+            GlobalMessenger.FireEvent("DeactivateThirdPersonCamera");
+
+            // Don't actually change camera because here we just move it
+            if (CurrentCamera.name.Equals("RemoteViewerCamera")) return;
 
             try
             {
@@ -385,8 +392,6 @@ namespace ThirdPersonCamera
             Locator.GetPlayerCamera().mainCamera.enabled = true;
             _camera.enabled = false;
             _distance = 0f;
-
-            GlobalMessenger.FireEvent("DeactivateThirdPersonCamera");
         }
 
         public void Update()

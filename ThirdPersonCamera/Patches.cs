@@ -253,5 +253,33 @@ namespace ThirdPersonCamera
             }
             return true;
         }
+
+        public static bool NomaiRemoteCameraLateUpdate(NomaiRemoteCamera __instance, NomaiRemoteCameraPlatform ____owningPlatform, OWCamera ____camera,
+            NomaiRemoteCameraPlatform ____controllingPlatform, OWCamera ____controllingCamera)
+        {
+            if (!Main.IsThirdPerson()) return true;
+
+            if (____owningPlatform && ____controllingPlatform)
+            {
+                var thirdPersonCamera = ThirdPersonCamera.GetCamera();
+                __instance.transform.position = NomaiRemoteCameraPlatform.TransformPoint(thirdPersonCamera.transform.position, ____controllingPlatform, ____owningPlatform);
+                __instance.transform.rotation = NomaiRemoteCameraPlatform.TransformRotation(thirdPersonCamera.transform.rotation, ____controllingPlatform, ____owningPlatform);
+                ____camera.fieldOfView = thirdPersonCamera.fieldOfView;
+            }
+
+            return false;
+        }
+
+        public static bool NomaiRemoteCameraPlatformAwake(NomaiRemoteCameraPlatform __instance, GameObject ____hologramGroup, Transform ____playerHologram)
+        {
+            var head = ____playerHologram.GetChild(0).Find("player_mesh_noSuit:Traveller_HEA_Player").Find("player_mesh_noSuit:Player_Head");
+            var helmet = ____playerHologram.GetChild(0).Find("Traveller_Mesh_v01:Traveller_Geo").Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
+
+            if (head != null) head.gameObject.layer = 27;
+            else Main.WriteWarning("Couldn't find head");
+            if (helmet != null) helmet.gameObject.layer = 27;
+            else Main.WriteWarning("Couldn't find helmet");
+            return true;
+        }
     }
 }

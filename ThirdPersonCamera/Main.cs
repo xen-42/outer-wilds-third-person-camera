@@ -68,6 +68,8 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateWaveform", typeof(Patches), nameof(Patches.UpdateWaveform));
             ModHelper.HarmonyHelper.AddPostfix<SignalscopeReticleController>("UpdateBrackets", typeof(Patches), nameof(Patches.UpdateBrackets));
             ModHelper.HarmonyHelper.AddPrefix<HUDCamera>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.HUDCameraOnSwitchActiveCamera));
+            ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCamera>("LateUpdate", typeof(Patches), nameof(Patches.NomaiRemoteCameraLateUpdate));
+            ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCameraPlatform>("Awake", typeof(Patches), nameof(Patches.NomaiRemoteCameraPlatformAwake));
 
             // Events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
@@ -122,6 +124,7 @@ namespace ThirdPersonCamera
 
                     // This actually doesn't seem to affect the player camera
                     GameObject helmetMesh = GameObject.Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
+                    Main.WriteInfo("HELMET PARENT: " + helmetMesh.transform.parent.name);
                     helmetMesh.layer = 0;
 
                     GameObject probeLauncher = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncher>().gameObject;
