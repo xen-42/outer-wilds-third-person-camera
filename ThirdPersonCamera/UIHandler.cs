@@ -31,7 +31,11 @@ namespace ThirdPersonCamera
 
         private Vector3 _shipSigScopeLocalScale = Vector3.zero;
 
-        private bool initialized = false;
+        private RectTransform _signalscopeDistanceRectTransform;
+        private RectTransform _shipTextRectTransform;
+        private RectTransform _translatorRectTransform;
+        private RectTransform _probeLauncherRectTransform;
+        private RectTransform _signalscopeRectTransform;
 
         public UIHandler()
         {
@@ -44,6 +48,7 @@ namespace ThirdPersonCamera
             GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
             GlobalMessenger.AddListener("GamePaused", new Callback(OnGamePaused));
             GlobalMessenger.AddListener("GameUnpaused", new Callback(OnGameUnpaused));
+            GlobalMessenger<GraphicSettings>.AddListener("GraphicSettingsUpdated", new Callback<GraphicSettings>(OnGraphicSettingsUpdated));
         }
 
         public void OnDestroy()
@@ -57,6 +62,7 @@ namespace ThirdPersonCamera
             GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
             GlobalMessenger.RemoveListener("GamePaused", new Callback(OnGamePaused));
             GlobalMessenger.RemoveListener("GameUnpaused", new Callback(OnGameUnpaused));
+            GlobalMessenger<GraphicSettings>.RemoveListener("GraphicSettingsUpdated", new Callback<GraphicSettings>(OnGraphicSettingsUpdated));
         }
 
         public void Init()
@@ -82,13 +88,9 @@ namespace ThirdPersonCamera
             ShipText = shipTextObject.AddComponent<Text>();
             ShipText.font = font;
             ShipText.text = "";
-            ShipText.fontSize = 24;
             ShipText.alignment = TextAnchor.UpperCenter;
 
-            // Text position
-            RectTransform shipTextRectTransform = ShipText.GetComponent<RectTransform>();
-            shipTextRectTransform.localPosition = new Vector3(0, Screen.height / 4f - 48, 0);
-            shipTextRectTransform.sizeDelta = new Vector2(Screen.width, Screen.height / 2f);
+            _shipTextRectTransform = ShipText.GetComponent<RectTransform>();
 
             // Nomai Text
             GameObject myText2 = new GameObject();
@@ -98,13 +100,9 @@ namespace ThirdPersonCamera
             TranslatorText = myText2.AddComponent<Text>();
             TranslatorText.font = font;
             TranslatorText.text = "";
-            TranslatorText.fontSize = 32;
             TranslatorText.alignment = TextAnchor.UpperCenter;
 
-            // Text position
-            RectTransform translatorRectTransform = TranslatorText.GetComponent<RectTransform>();
-            translatorRectTransform.localPosition = new Vector3(0, Screen.height / 4f - 48, 0);
-            translatorRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
+            _translatorRectTransform = TranslatorText.GetComponent<RectTransform>();
 
             // Start inactive
             ShipText.gameObject.SetActive(false);
@@ -113,11 +111,9 @@ namespace ThirdPersonCamera
             // Ship probe camera
             GameObject imgObject = new GameObject("ShipProbeLauncherImage");
 
-            RectTransform probeLauncherRectTransform = imgObject.AddComponent<RectTransform>();
-            probeLauncherRectTransform.transform.SetParent(canvas.transform);
-            probeLauncherRectTransform.localScale = Vector3.one;
-            probeLauncherRectTransform.anchoredPosition = new Vector2(600f, 250f);
-            probeLauncherRectTransform.sizeDelta = new Vector2(400, 400);
+            _probeLauncherRectTransform = imgObject.AddComponent<RectTransform>();
+            _probeLauncherRectTransform.transform.SetParent(canvas.transform);
+            _probeLauncherRectTransform.localScale = Vector3.one;
 
             _shipProbeLauncherImage = imgObject.AddComponent<Image>();
             imgObject.transform.SetParent(canvas.transform);
@@ -154,13 +150,10 @@ namespace ThirdPersonCamera
             _signalScopeText = myText3.AddComponent<Text>();
             _signalScopeText.font = font;
             _signalScopeText.text = "";
-            _signalScopeText.fontSize = 24;
             _signalScopeText.alignment = TextAnchor.UpperCenter;
 
             // Text position
-            RectTransform signalscopeRectTransform = _signalScopeText.GetComponent<RectTransform>();
-            signalscopeRectTransform.localPosition = new Vector3(0, -Screen.height / 1.7f, 0);
-            signalscopeRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
+            _signalscopeRectTransform = _signalScopeText.GetComponent<RectTransform>();
 
             // SignalScope Text
             GameObject myText4 = new GameObject();
@@ -170,15 +163,12 @@ namespace ThirdPersonCamera
             _signalScopeDistanceText = myText4.AddComponent<Text>();
             _signalScopeDistanceText.font = font;
             _signalScopeDistanceText.text = "";
-            _signalScopeDistanceText.fontSize = 32;
             _signalScopeDistanceText.alignment = TextAnchor.UpperCenter;
 
             // Text position
-            RectTransform signalscopeDistanceRectTransform = _signalScopeDistanceText.GetComponent<RectTransform>();
-            signalscopeDistanceRectTransform.localPosition = new Vector3(0, -Screen.height / 3f + 32, 0);
-            signalscopeDistanceRectTransform.sizeDelta = new Vector2(Screen.width * 0.6f, Screen.height / 2f);
+            _signalscopeDistanceRectTransform = _signalScopeDistanceText.GetComponent<RectTransform>();
 
-            initialized = true;
+            ResetGraphicsSizes();
 
             SetSignalScopeUIVisible(false);
         }
@@ -264,7 +254,7 @@ namespace ThirdPersonCamera
 
         private void OnGamePaused()
         {
-            if (!initialized) return;
+            if (!Main.IsLoaded) return;
 
             ShipText.gameObject.SetActive(false);
             _shipProbeLauncherImage.gameObject.SetActive(false);
@@ -274,7 +264,7 @@ namespace ThirdPersonCamera
 
         private void OnGameUnpaused()
         {
-            if (!initialized) return;
+            if (!Main.IsLoaded) return;
             if (Locator.GetActiveCamera().name != "ThirdPersonCamera") return;
 
             ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
@@ -285,7 +275,7 @@ namespace ThirdPersonCamera
 
         private void SetSignalScopeUIVisible(bool visible)
         {
-            if (!initialized) return;
+            if (!Main.IsLoaded) return;
             _signalScopeText.gameObject.SetActive(visible);
             _signalScopeDistanceText.gameObject.SetActive(visible);
             _waveformRenderer.gameObject.SetActive(visible);
@@ -332,6 +322,45 @@ namespace ThirdPersonCamera
         public static void SetSignalScopeWaveform(Vector3[] linePoints)
         {
             _waveformRenderer.SetPositions(linePoints);
+        }
+
+        private void OnGraphicSettingsUpdated(GraphicSettings graphicSettings)
+        {
+            ResetGraphicsSizes();
+        }
+
+        private void ResetGraphicsSizes()
+        {
+            if (!Main.IsLoaded) return;
+
+            var height = PlayerData.GetGraphicSettings().displayResHeight;
+            var width = PlayerData.GetGraphicSettings().displayResWidth;
+            
+            Main.WriteInfo($"Reseting graphics sizes {height}, {width}");
+
+            // Ship
+            ShipText.fontSize = (int)(24f * height / 1080f);
+            _shipTextRectTransform.localPosition = new Vector3(0, (int) (0.18f * height), 0);
+            _shipTextRectTransform.sizeDelta = new Vector2((int)width, (int)(height / 2f));
+
+            // Translator
+            TranslatorText.fontSize = (int)(32f * height / 1080f);
+            _translatorRectTransform.localPosition = new Vector3(0, (int)(0.18f * height), 0);
+            _translatorRectTransform.sizeDelta = new Vector2((int)(width * 0.6f), (int)(height / 2f));
+
+            // Probe image
+            _probeLauncherRectTransform.anchoredPosition = new Vector2((int)(0.3125f * width), (int)(0.231f * height));
+            _probeLauncherRectTransform.sizeDelta = new Vector2((int)(0.20f * width), (int)(0.20f * width));
+
+            // Signalscope frequency
+            _signalScopeText.fontSize = (int)(24f * height / 1080f);
+            _signalscopeRectTransform.localPosition = new Vector3(0, (int)(0.58f * -height), 0);
+            _signalscopeRectTransform.sizeDelta = new Vector2((int)(width * 0.6f), (int)(height / 2f));
+
+            // Signalscope distance
+            _signalScopeDistanceText.fontSize = (int)(32f * height / 1080f);
+            _signalscopeDistanceRectTransform.localPosition = new Vector3(0, (int)(0.35f * -height), 0);
+            _signalscopeDistanceRectTransform.sizeDelta = new Vector2((int)(width * 0.6f), (int)(0.5f * height));
         }
     }
 }

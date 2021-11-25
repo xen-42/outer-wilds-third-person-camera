@@ -12,7 +12,7 @@ namespace ThirdPersonCamera
 {
     public class Main : ModBehaviour
     {
-        private bool loaded = false;
+        public static bool IsLoaded { get; private set; } = false;
         private bool afterMemoryUplink = false;
 
         private static Main SharedInstance;
@@ -67,6 +67,7 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateLabels", typeof(Patches), nameof(Patches.UpdateLabels));
             ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateWaveform", typeof(Patches), nameof(Patches.UpdateWaveform));
             ModHelper.HarmonyHelper.AddPostfix<SignalscopeReticleController>("UpdateBrackets", typeof(Patches), nameof(Patches.UpdateBrackets));
+            ModHelper.HarmonyHelper.AddPrefix<HUDCamera>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.HUDCameraOnSwitchActiveCamera));
 
             // Events
             ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
@@ -91,10 +92,10 @@ namespace ThirdPersonCamera
         {
             if (scene.name != "SolarSystem")
             {
-                loaded = false;
+                IsLoaded = false;
                 afterMemoryUplink = false;
             } 
-            else if (loaded)
+            else if (IsLoaded)
             {
                 // Already loaded but we're being put into the SolarSystem scene again
                 // We must have done the memory uplink (universe is reset after)
@@ -110,11 +111,11 @@ namespace ThirdPersonCamera
             {
                 try
                 {
+                    IsLoaded = true;
+
                     ThirdPersonCamera.Init();
                     UIHandler.Init();
                     HUDHandler.Init();
-
-                    loaded = true;
 
                     if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
 
@@ -134,7 +135,7 @@ namespace ThirdPersonCamera
 
         private void Update()
         {
-            if (!loaded) return;
+            if (!IsLoaded) return;
 
             ThirdPersonCamera.Update();
             PlayerMeshHandler.Update();

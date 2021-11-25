@@ -95,32 +95,24 @@ namespace ThirdPersonCamera
 
         private void ShowHelmetHUD(bool visible)
         {
-            /*
-            if(_minimap == null)
-            {
-                ///PlayerHUD/HelmetOnUI/UICanvas/SecondaryGroup/HUD_Minimap/Minimap_Root
-                _minimap = GameObject.Instantiate(GameObject.Find("/PlayerHUD/HelmetOnUI/UICanvas/SecondaryGroup/HUD_Minimap"), UIHandler.SigScopeReticuleParent.transform);
-                _minimap.transform.position = _minimap.transform.parent.position;
-                Main.WriteInfo("Making Minimap");
-            }
-            */
-
-            if (_UICanvas != null)
-            {
-                _UICanvas.renderMode = visible && Locator.GetPlayerSuit().IsWearingHelmet() ? RenderMode.ScreenSpaceOverlay : RenderMode.ScreenSpaceCamera;
-                //_UICanvas.transform.parent = visible ? UIHandler.SigScopeReticuleParent.transform : GameObject.Find("/PlayerHUD/HelmetOnUI").transform;
-                //_UICanvas.transform.localPosition = Vector3.zero;
-            }
-
             Canvas[] helmetOffUI = GameObject.Find("PlayerHUD/HelmetOffUI")?.GetComponentsInChildren<Canvas>();
             if(helmetOffUI != null) foreach (Canvas canvas in helmetOffUI)
             {
                 canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
             }
-
-            // Get rid of 2D helmet stuff
+            
             var Helmet = GameObject.Find("Helmet");
-            if(Helmet != null) Helmet.transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+            if (Helmet != null)
+            {
+                // Reparent the HUDCamera stuff
+                Helmet.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
+                Helmet.transform.localPosition = Vector3.zero;
+
+                // Get rid of 2D helmet stuff
+                Helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Helmet").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+                Helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/HelmetFrame").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+                Helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Scarf").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+            }
 
             // Get rid of effects bubbles
             var DarkMatterBubble = GameObject.Find("/Player_Body/PlayerCamera/ScreenEffects/DarkMatterBubble");

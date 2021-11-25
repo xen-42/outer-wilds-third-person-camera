@@ -6,6 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Reflection;
+using OWML.ModHelper;
+using OWML.Common;
 
 namespace ThirdPersonCamera
 {
@@ -232,15 +235,23 @@ namespace ThirdPersonCamera
         public static void UpdateBrackets(SignalscopeReticleController __instance, Transform ____reticuleBracketsTransform, List<SkinnedMeshRenderer> ____clonedLeftBrackets,
             List<SkinnedMeshRenderer> ____clonedRightBrackets)
         {
-            Transform parent = PlayerState.AtFlightConsole() && Main.IsThirdPerson() ?
-                    UIHandler.SigScopeReticuleParent.transform : ____reticuleBracketsTransform;
-                    //Locator.GetShipTransform() : ____reticuleBracketsTransform;
+            Transform parent = PlayerState.AtFlightConsole() && Main.IsThirdPerson() ? UIHandler.SigScopeReticuleParent.transform : ____reticuleBracketsTransform;
             for (int i = 0; i < ____clonedLeftBrackets.Count; i++)
             {
                 ____clonedLeftBrackets[i].transform.parent = parent;
                 ____clonedRightBrackets[i].transform.parent = parent;
             }
-            //Main.WriteInfo($"{Utility.GetPath(____reticuleBracketsTransform)}, {____reticuleBracketsTransform.position}, {____reticuleBracketsTransform.rotation}");
+        }
+
+        public static bool HUDCameraOnSwitchActiveCamera(HUDCamera __instance, OWCamera __0) 
+        {
+            if(__0.name.Equals("ThirdPersonCamera"))
+            {
+                MethodInfo methodInfo = typeof(HUDCamera).GetMethod("ResumeHUDRendering", BindingFlags.NonPublic | BindingFlags.Instance);
+                methodInfo.Invoke(__instance, new object[] { });
+                return false;
+            }
+            return true;
         }
     }
 }
