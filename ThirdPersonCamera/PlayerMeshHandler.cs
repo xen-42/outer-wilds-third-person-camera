@@ -57,14 +57,15 @@ namespace ThirdPersonCamera
 
             _propID_Fade = Shader.PropertyToID("_Fade");
         }
+
         private void OnHazardsUpdated()
         {
             var _inFire = _hazardDetector.InHazardType(HazardVolume.HazardType.FIRE);
             if (_inFire && !_fireRenderer.enabled)
-            {
-                _fireRenderer.enabled = true;
+            {   
                 inFire = true;
                 _fireRenderer.material.SetFloat(_propID_Fade, fade);
+                if(Main.IsThirdPerson()) _fireRenderer.enabled = true;
             } 
             else
             {
@@ -76,12 +77,14 @@ namespace ThirdPersonCamera
         {
             SetArmVisibility(!_isToolHeld);
             SetHeadVisibility(false);
+            _fireRenderer.enabled = false;
         }
 
         private void OnActivateThirdPersonCamera()
         {
             SetArmVisibility(true);
             SetHeadVisibility(true);
+            _fireRenderer.enabled = fade > 0f;
         }
 
         private void OnToolEquiped(PlayerTool _)

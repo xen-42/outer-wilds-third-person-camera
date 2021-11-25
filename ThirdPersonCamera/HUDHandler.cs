@@ -114,12 +114,20 @@ namespace ThirdPersonCamera
                 Helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Scarf").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
             }
 
-            // Get rid of effects bubbles
+            // Put bubble effects on the right camera
             var DarkMatterBubble = GameObject.Find("/Player_Body/PlayerCamera/ScreenEffects/DarkMatterBubble");
-            if(DarkMatterBubble != null) DarkMatterBubble.transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+            if (DarkMatterBubble != null)
+            {
+                DarkMatterBubble.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
+                DarkMatterBubble.transform.localPosition = Vector3.zero;
+            }
 
             var LightFlickerEffectBubble = GameObject.Find("/Player_Body/PlayerCamera/ScreenEffects/LightFlickerEffectBubble");
-            if(LightFlickerEffectBubble != null) LightFlickerEffectBubble.transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+            if (LightFlickerEffectBubble != null)
+            {
+                LightFlickerEffectBubble.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
+                LightFlickerEffectBubble.transform.localPosition = Vector3.zero;
+            }
         }
 
         private void ShowReticule(bool visible)
