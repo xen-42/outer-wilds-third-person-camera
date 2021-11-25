@@ -116,6 +116,7 @@ namespace ThirdPersonCamera
                     ThirdPersonCamera.Init();
                     UIHandler.Init();
                     HUDHandler.Init();
+                    PlayerMeshHandler.Init();
 
                     if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
 

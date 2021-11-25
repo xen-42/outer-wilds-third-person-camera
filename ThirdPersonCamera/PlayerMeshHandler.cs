@@ -12,6 +12,13 @@ namespace ThirdPersonCamera
         private bool _isToolHeld = false;
         private bool _setArmVisibleNextTick = false;
 
+        private MeshRenderer _fireRenderer;
+        private HazardDetector _hazardDetector;
+        private float fade = 0f;
+        private bool inFire = false;
+
+        private int _propID_Fade;
+
         public PlayerMeshHandler()
         {
             GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
@@ -28,6 +35,41 @@ namespace ThirdPersonCamera
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
+        }
+
+        public void Init()
+        {
+            // /Controller_Campfire
+            //var g = GameObject.FindGameObjectsWithTag("Fire")[0];
+            var campfire = GameObject.Find("/Moon_Body/Sector_THM/Interactables_THM/Effects_HEA_Campfire/Props_HEA_Campfire/Campfire_Flames");
+            foreach (Transform t in campfire.transform)
+            {
+                Main.WriteInfo($"{t.name}");
+            }
+
+            _fireRenderer = GameObject.Instantiate(campfire.GetComponent<MeshRenderer>(), Locator.GetPlayerBody().transform);
+            _fireRenderer.transform.localScale = new Vector3(0.8f, 2f, 0.8f);
+            _fireRenderer.transform.localPosition = new Vector3(0, -1.2f, -0.25f);
+            _fireRenderer.enabled = false;
+
+            _hazardDetector = Locator.GetPlayerController().GetComponentInChildren<HazardDetector>();
+            _hazardDetector.OnHazardsUpdated += OnHazardsUpdated;
+
+            _propID_Fade = Shader.PropertyToID("_Fade");
+        }
+        private void OnHazardsUpdated()
+        {
+            var _inFire = _hazardDetector.InHazardType(HazardVolume.HazardType.FIRE);
+            if (_inFire && !_fireRenderer.enabled)
+            {
+                _fireRenderer.enabled = true;
+                inFire = true;
+                _fireRenderer.material.SetFloat(_propID_Fade, fade);
+            } 
+            else
+            {
+                inFire = false;
+            }
         }
 
         private void OnDeactivateThirdPersonCamera()
@@ -94,6 +136,17 @@ namespace ThirdPersonCamera
             {
                 SetArmVisibility(true);
                 _setArmVisibleNextTick = false;
+            }
+
+            fade = Mathf.MoveTowards(fade, inFire ? 1f : 0f, Time.deltaTime / (inFire ? 1f : 0.5f));
+            _fireRenderer.material.SetAlpha(fade);
+            float fireWidth = PlayerState.IsWearingSuit() ? 1.2f : 0.8f;
+            _fireRenderer.transform.localScale = new Vector3(fireWidth, 2f, fireWidth) * (0.75f + 0.25f * Mathf.Sqrt(fade));
+
+            if (!inFire && fade <= 0f)
+            {
+                fade = 0f;
+                _fireRenderer.enabled = false;
             }
         }
     }

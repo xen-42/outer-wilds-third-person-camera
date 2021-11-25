@@ -180,7 +180,7 @@ namespace ThirdPersonCamera
 
             if (OWInput.IsNewlyReleased(InputLibrary.freeLook, InputMode.All))
             {
-                __instance.CenterCameraOverSeconds(0.33f, true);
+                __instance.CenterCameraOverSeconds(0.33f, true); 
             }
             if (OWTime.IsPaused(OWTime.PauseType.Reading))
             {
