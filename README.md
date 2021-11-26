@@ -1,6 +1,6 @@
 # Outer Wilds Third Person Camera
 
-![image](https://user-images.githubusercontent.com/22628069/142803013-35bd56f4-43db-42e0-9f52-09f46b9569ca.png)
+![third person camera](https://user-images.githubusercontent.com/22628069/143540341-f2c7ce81-55b2-40fb-9392-3e89ba0f3aad.jpg)
 
 Press V or the left directional button (Gamepad) to toggle between 1st and 3rd person.
 
