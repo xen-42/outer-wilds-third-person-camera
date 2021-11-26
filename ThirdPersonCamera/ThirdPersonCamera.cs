@@ -268,9 +268,8 @@ namespace ThirdPersonCamera
                     }
                     break;
                 case "RemoteViewerCamera":
-                    cameraModeLocked = false;
-                    break;
                 case "FREECAM":
+                case "StaticCamera":
                     cameraModeLocked = false;
                     break;
             }
@@ -285,12 +284,9 @@ namespace ThirdPersonCamera
                     }
                     break;
                 case "MapCamera":
-                    cameraModeLocked = true;
-                    break;
                 case "LandingCamera":
-                    cameraModeLocked = true;
-                    break;
                 case "RemoteViewerCamera":
+                case "StaticCamera":
                     cameraModeLocked = true;
                     break;
                 case "FREECAM":
