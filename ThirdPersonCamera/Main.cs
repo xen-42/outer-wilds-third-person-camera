@@ -22,6 +22,8 @@ namespace ThirdPersonCamera
         public static ToolMaterialHandler ToolMaterialHandler { get; private set; }
         public static HUDHandler HUDHandler { get; private set; }
 
+        public static bool KeepFreeLookAngle { get; private set; }
+
         private void Start()
         {
             SharedInstance = this;
@@ -88,6 +90,12 @@ namespace ThirdPersonCamera
             PlayerMeshHandler.OnDestroy();
             ToolMaterialHandler.OnDestroy();
             HUDHandler.OnDestroy();
+        }
+
+        public override void Configure(IModConfig config)
+        {
+            base.Configure(config);
+            KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

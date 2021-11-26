@@ -125,13 +125,15 @@ namespace ThirdPersonCamera
         public static bool UpdateRotation(PlayerCameraController __instance, ref float ____degreesX, ref float ____degreesY, OWCamera ____playerCamera, bool ____isSnapping,
                 ShipCockpitController ____shipController, Quaternion ____rotationX, Quaternion ____rotationY)
         {
-            if (!Main.IsThirdPerson() || !OWInput.IsPressed(InputLibrary.freeLook, 0f)) return true;
+            if (!Main.IsThirdPerson() || (!OWInput.IsPressed(InputLibrary.freeLook, 0f) && !Main.KeepFreeLookAngle)) return true;
 
             ____degreesX %= 360f;
             ____degreesY %= 360f;
             if (!____isSnapping)
             {
-                if ((____shipController == null || (____shipController.AllowFreeLook() | !____shipController.IsPlayerAtFlightConsole())) && OWInput.IsPressed(InputLibrary.freeLook, 0f))
+                bool flag = (____shipController == null || (____shipController.AllowFreeLook() | !____shipController.IsPlayerAtFlightConsole())) && OWInput.IsPressed(InputLibrary.freeLook, 0f);
+                bool flag2 = Main.KeepFreeLookAngle;
+                if (flag || flag2)
                 {
                     ____degreesY = Mathf.Clamp(____degreesY, -80f, 80f);
                 }
@@ -176,9 +178,9 @@ namespace ThirdPersonCamera
                 if (____degreesX < -180f) ____degreesX += 360f;
             }
 
-            if (!Main.IsThirdPerson() || PlayerState.AtFlightConsole()) return true;
+            if (!Main.IsThirdPerson() || (PlayerState.AtFlightConsole() && !Main.KeepFreeLookAngle)) return true;
 
-            if (OWInput.IsNewlyReleased(InputLibrary.freeLook, InputMode.All))
+            if (OWInput.IsNewlyReleased(InputLibrary.freeLook, InputMode.All) && !Main.KeepFreeLookAngle)
             {
                 __instance.CenterCameraOverSeconds(0.33f, true); 
             }
