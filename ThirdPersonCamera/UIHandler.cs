@@ -254,7 +254,7 @@ namespace ThirdPersonCamera
 
         private void OnGamePaused()
         {
-            if (!Main.IsLoaded) return;
+            if (!Main.IsLoaded || ShipText == null) return;
 
             ShipText.gameObject.SetActive(false);
             _shipProbeLauncherImage.gameObject.SetActive(false);

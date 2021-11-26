@@ -26,6 +26,7 @@ namespace ThirdPersonCamera
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
+            GlobalMessenger.AddListener("PutOnHelmet", new Callback(OnPutOnHelmet));
         }
 
         public void OnDestroy()
@@ -35,6 +36,7 @@ namespace ThirdPersonCamera
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
+            GlobalMessenger.RemoveListener("PutOnHelmet", new Callback(OnPutOnHelmet));
         }
 
         public void Init()
@@ -121,16 +123,25 @@ namespace ThirdPersonCamera
             SetHeadVisibility(true);
         }
 
+        private void OnPutOnHelmet()
+        {
+            SetHeadVisibility(true);
+        }
+
         private void SetHeadVisibility(bool visible)
         {
-            if (Locator.GetPlayerSuit().IsWearingHelmet()) return;
-
-            GameObject head = GameObject.Find("player_mesh_noSuit:Player_Head");
-            if (head != null)
+            if (Locator.GetPlayerSuit().IsWearingHelmet())
             {
-                if (head.layer != 0) head.layer = 0;
-            } 
-            else Main.WriteWarning("Couldn't find the player's head");
+                GameObject helmetMesh = GameObject.Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
+                if(helmetMesh!=null) helmetMesh.layer = 0;
+                else Main.WriteWarning("Couldn't find the player's helmet");
+            }
+            else
+            {
+                GameObject head = GameObject.Find("player_mesh_noSuit:Player_Head");
+                if (head != null) if (head.layer != 0) head.layer = 0;
+                else Main.WriteWarning("Couldn't find the player's head");
+            }
         }
 
         public void Update()

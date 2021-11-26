@@ -1,6 +1,7 @@
 {
   "enabled": true,
   "settings": {
-    "Keep free look angle": false
+    "Keep free look angle": false,
+    "Use 3rd person by default": true
   }
 }

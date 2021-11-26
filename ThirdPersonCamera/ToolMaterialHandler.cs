@@ -17,6 +17,7 @@ namespace ThirdPersonCamera
 
         // We make some tools larger in 3rd person view
         private readonly string[] resizingExemptTools = { "NomaiTranslatorProp", "ProbeLauncher", "TutorialCamera_Base", "TutorialProbeLauncher_Base" };
+        private bool _hasFixedProbeLauncher = false;
 
         public ToolMaterialHandler()
         {
@@ -78,6 +79,16 @@ namespace ThirdPersonCamera
 
         private void SetToolMaterials(bool thirdPerson)
         {
+            if (!_hasFixedProbeLauncher)
+            {
+                GameObject probeLauncher = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncher>().gameObject;
+                if (probeLauncher != null)
+                {
+                    probeLauncher.layer = 0;
+                    _hasFixedProbeLauncher = true;
+                }
+            }
+
             if (_heldTool == null) return;
             MeshRenderer[] meshRenderers = _heldTool.GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer meshRenderer in meshRenderers)

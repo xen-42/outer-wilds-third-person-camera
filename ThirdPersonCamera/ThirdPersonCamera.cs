@@ -85,10 +85,6 @@ namespace ThirdPersonCamera
             GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
             GlobalMessenger.AddListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
 
-            // Different behaviour for certain tools
-            GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
-            GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-
             GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
 
             Main.WriteSuccess("Done creating ThirdPersonCamera");
@@ -112,8 +108,6 @@ namespace ThirdPersonCamera
 
             GlobalMessenger<ShipDetachableModule>.RemoveListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
             GlobalMessenger.RemoveListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
-            GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
-            GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
 
             GlobalMessenger.RemoveListener("StartViewingProjector", new Callback(DisableCamera));
             GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
@@ -125,8 +119,6 @@ namespace ThirdPersonCamera
 
         public void PreInit()
         {
-            Main.WriteInfo("PreInit ThirdPersonCamera");
-
             // Have to do this here or else the skybox breaks
             _thirdPersonCamera = new GameObject();
             _thirdPersonCamera.SetActive(false);
@@ -171,7 +163,7 @@ namespace ThirdPersonCamera
 
             // Now loaded but we default to being disabled
             CameraEnabled = false;
-            CameraActive = true;
+            CameraActive = Main.UseThirdPersonByDefault;
             JustStartedLoop = true;
 
             _ejected = false;
@@ -196,16 +188,6 @@ namespace ThirdPersonCamera
         private void OnShipModuleDetached(ShipDetachableModule module)
         {
             if (module.name == "Module_Cockpit_Body") _ejected = true;
-        }
-
-        private void OnToolEquiped(PlayerTool tool)
-        {
-            //if (_pilotingShip) DisableCamera();
-        }
-
-        private void OnToolUnequiped(PlayerTool tool)
-        {
-            //if (_pilotingShip) EnableCamera();
         }
 
         private void OnExitFlightConsole()

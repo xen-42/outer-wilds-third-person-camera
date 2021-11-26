@@ -14,6 +14,7 @@ namespace ThirdPersonCamera
     {
         public static bool IsLoaded { get; private set; } = false;
         private bool afterMemoryUplink = false;
+        private bool _initNextTick = false;
 
         private static Main SharedInstance;
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
@@ -23,6 +24,7 @@ namespace ThirdPersonCamera
         public static HUDHandler HUDHandler { get; private set; }
 
         public static bool KeepFreeLookAngle { get; private set; }
+        public static bool UseThirdPersonByDefault { get; private set; }
 
         private void Start()
         {
@@ -73,17 +75,12 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCamera>("LateUpdate", typeof(Patches), nameof(Patches.NomaiRemoteCameraLateUpdate));
             ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCameraPlatform>("Awake", typeof(Patches), nameof(Patches.NomaiRemoteCameraPlatformAwake));
 
-            // Events
-            ModHelper.Events.Subscribe<Flashlight>(Events.AfterStart);
-
             SceneManager.sceneLoaded += OnSceneLoaded;
-            ModHelper.Events.Event += OnEvent;
         }
 
         public void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-            ModHelper.Events.Event -= OnEvent;
 
             ThirdPersonCamera.OnDestroy();
             UIHandler.OnDestroy();
@@ -96,57 +93,68 @@ namespace ThirdPersonCamera
         {
             base.Configure(config);
             KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
+            UseThirdPersonByDefault = config.GetSettingsValue<bool>("Use 3rd person by default");
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.name != "SolarSystem")
+            if (!scene.name.Equals("SolarSystem"))
             {
                 IsLoaded = false;
                 afterMemoryUplink = false;
-            } 
-            else if (IsLoaded)
-            {
-                // Already loaded but we're being put into the SolarSystem scene again
-                // We must have done the memory uplink (universe is reset after)
-                afterMemoryUplink = true;
+                return;
             }
 
-            ThirdPersonCamera.PreInit();
+            // Already loaded but we're being put into the SolarSystem scene again
+            // We must have done the memory uplink (universe is reset after)
+            if (IsLoaded) afterMemoryUplink = true;
+
+            PreInit();
         }
 
-        private void OnEvent(MonoBehaviour behaviour, Events ev)
+        private void PreInit()
         {
-            if (behaviour.GetType() == typeof(Flashlight) && ev == Events.AfterStart)
+            try
             {
-                try
-                {
-                    IsLoaded = true;
+                ThirdPersonCamera.PreInit();
+                WriteSuccess("ThirdPersonCamera pre-initialization succeeded");
+                _initNextTick = true;
+            }
+            catch(Exception e)
+            {
+                WriteError($"ThirdPersonCamera pre-initialization failed. {e.Message}. {e.StackTrace}");
+            }
+        }
 
-                    ThirdPersonCamera.Init();
-                    UIHandler.Init();
-                    HUDHandler.Init();
-                    PlayerMeshHandler.Init();
+        private void Init()
+        {
+            try
+            {
+                IsLoaded = true;
 
-                    if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
+                ThirdPersonCamera.Init();
+                UIHandler.Init();
+                HUDHandler.Init();
+                PlayerMeshHandler.Init();
 
-                    // This actually doesn't seem to affect the player camera
-                    GameObject helmetMesh = GameObject.Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
-                    Main.WriteInfo("HELMET PARENT: " + helmetMesh.transform.parent.name);
-                    helmetMesh.layer = 0;
+                if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
 
-                    GameObject probeLauncher = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncher>().gameObject;
-                    probeLauncher.layer = 0;
-                }
-                catch (Exception e)
-                {
-                    WriteError($"Init failed. {e.Message}. {e.StackTrace}");
-                }
+                WriteSuccess("ThirdPersonCamera initialization succeeded");
+            }
+            catch (Exception e)
+            {
+                WriteError($"ThirdPersonCamera initialization failed. {e.Message}. {e.StackTrace}");
             }
         }
 
         private void Update()
         {
+            if(_initNextTick)
+            {
+                Init();
+                _initNextTick = false;
+            }
+
             if (!IsLoaded) return;
 
             ThirdPersonCamera.Update();
@@ -167,8 +175,11 @@ namespace ThirdPersonCamera
                 Main.WriteInfo("Opening eyes for the first time");
                 ThirdPersonCamera.JustStartedLoop = false;
                 ThirdPersonCamera.EnableCamera();
-                ThirdPersonCamera.ActivateCamera();
-                Locator.GetPlayerCameraController().CenterCameraOverSeconds(1.0f, true);
+                if (UseThirdPersonByDefault)
+                {
+                    ThirdPersonCamera.ActivateCamera();
+                    Locator.GetPlayerCameraController().CenterCameraOverSeconds(1.0f, true);
+                }
             }
             else
             {
