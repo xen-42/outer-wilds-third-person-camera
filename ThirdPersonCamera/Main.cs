@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using OWML.Utils;
 
 namespace ThirdPersonCamera
 {
@@ -16,7 +17,7 @@ namespace ThirdPersonCamera
         private bool afterMemoryUplink = false;
         private bool _initNextTick = false;
 
-        private static Main SharedInstance;
+        public static Main SharedInstance { get; private set; }
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
         public static UIHandler UIHandler { get; private set; }
         public static PlayerMeshHandler PlayerMeshHandler { get; private set; }
@@ -25,6 +26,7 @@ namespace ThirdPersonCamera
 
         public static bool KeepFreeLookAngle { get; private set; }
         public static bool UseThirdPersonByDefault { get; private set; }
+        public static bool UseCustomDreamerModel { get; private set; }
 
         private void Start()
         {
@@ -45,8 +47,8 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("EquipTool", typeof(Patches), nameof(Patches.EquipTool));
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("UnequipTool", typeof(Patches), nameof(Patches.UnequipTool));
             ModHelper.HarmonyHelper.AddPostfix<GhostGrabController>("OnStartLiftPlayer", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("ExitLanternBounds", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("EnterLanternBounds", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
+            //ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("ExitLanternBounds", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
+            //ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("EnterLanternBounds", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<ProbeLauncher>("RetrieveProbe", typeof(Patches), nameof(Patches.OnRetrieveProbe));
             ModHelper.HarmonyHelper.AddPrefix<MindProjectorTrigger>("OnProjectionStart", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnProjectionComplete", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
@@ -94,6 +96,7 @@ namespace ThirdPersonCamera
             base.Configure(config);
             KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
             UseThirdPersonByDefault = config.GetSettingsValue<bool>("Use 3rd person by default");
+            UseCustomDreamerModel = config.GetSettingsValue<bool>("Use custom dreamer model");
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -138,6 +141,12 @@ namespace ThirdPersonCamera
                 PlayerMeshHandler.Init();
 
                 if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
+
+                try
+                {
+                    ModHelper.Interaction.GetMod("xen.DayDream").GetValue<List<OWCamera>>("Cameras").Add(ThirdPersonCamera.OWCamera);
+                }
+                catch (Exception) { }
 
                 WriteSuccess("ThirdPersonCamera initialization succeeded");
             }

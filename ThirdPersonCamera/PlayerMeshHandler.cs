@@ -41,13 +41,7 @@ namespace ThirdPersonCamera
 
         public void Init()
         {
-            // /Controller_Campfire
-            //var g = GameObject.FindGameObjectsWithTag("Fire")[0];
             var campfire = GameObject.Find("/Moon_Body/Sector_THM/Interactables_THM/Effects_HEA_Campfire/Props_HEA_Campfire/Campfire_Flames");
-            foreach (Transform t in campfire.transform)
-            {
-                Main.WriteInfo($"{t.name}");
-            }
 
             _fireRenderer = GameObject.Instantiate(campfire.GetComponent<MeshRenderer>(), Locator.GetPlayerBody().transform);
             _fireRenderer.transform.localScale = new Vector3(0.8f, 2f, 0.8f);
@@ -58,6 +52,49 @@ namespace ThirdPersonCamera
             _hazardDetector.OnHazardsUpdated += OnHazardsUpdated;
 
             _propID_Fade = Shader.PropertyToID("_Fade");
+
+            if(Main.UseCustomDreamerModel)
+            {
+                var playerTransform = Locator.GetPlayerBody().transform;
+                var ghostMaterial = GameObject.Find("SIM_GhostBirdBody").GetComponent<MeshRenderer>().material;
+                var ghostShader = Shader.Find("Outer Wilds/Environment/Invisible Planet/Cyberspace");
+
+                var ghostTorso = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_torso.obj", "assets\\tex.png");
+                var ghostHead = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_head.obj", "assets\\tex.png");
+                var ghostEyes = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_eyes.obj", "assets\\tex.png");
+                var depth = Main.SharedInstance.ModHelper.Assets.GetTexture("assets\\tex.png");
+
+                ghostTorso.SetActive(true);
+                ghostTorso.transform.parent = playerTransform;
+                ghostTorso.transform.localPosition = 0.3f * Vector3.up + 0.3f * Vector3.back;
+                ghostTorso.transform.localRotation = Quaternion.AngleAxis(5, Vector3.right);
+                ghostTorso.transform.localScale = 0.25f * Vector3.one;
+                ghostTorso.layer = 28;
+                ghostTorso.name = "PlayerGhostTorso";
+                ghostTorso.GetComponent<MeshRenderer>().material = new Material(ghostShader);
+                ghostTorso.GetComponent<MeshRenderer>().material.CopyPropertiesFromMaterial(ghostMaterial);
+
+                ghostHead.SetActive(true);
+                ghostHead.transform.parent = playerTransform;
+                ghostHead.transform.position = Locator.GetPlayerCamera().transform.position + playerTransform.TransformDirection(Vector3.back) * 0.3f;
+                ghostHead.transform.localRotation = Quaternion.AngleAxis(-90, Vector3.up);
+                ghostHead.transform.localScale = 0.15f * Vector3.one;
+                ghostHead.layer = 28;
+                ghostHead.name = "PlayerGhostHead";
+                ghostHead.GetComponent<MeshRenderer>().material = new Material(ghostShader);
+                ghostHead.GetComponent<MeshRenderer>().material.CopyPropertiesFromMaterial(ghostMaterial);
+
+                ghostEyes.SetActive(true);
+                ghostEyes.transform.parent = ghostHead.transform;
+                ghostEyes.transform.localPosition = Vector3.zero;
+                ghostEyes.transform.rotation = ghostHead.transform.rotation;
+                ghostEyes.transform.localScale = Vector3.one;
+                ghostEyes.layer = 28;
+                ghostEyes.name = "PlayerGhostEyes";
+                ghostEyes.GetComponent<MeshRenderer>().material = new Material(Shader.Find("Standard"));
+                ghostEyes.GetComponent<MeshRenderer>().material.EnableKeyword("_EMISSION");
+                ghostEyes.GetComponent<MeshRenderer>().material.SetColor("_EmissionColor", Color.white);
+            }
         }
 
         private void OnHazardsUpdated()

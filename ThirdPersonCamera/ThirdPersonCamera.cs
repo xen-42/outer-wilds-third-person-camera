@@ -49,7 +49,6 @@ namespace ThirdPersonCamera
 
         public bool JustStartedLoop = true;
 
-
         public static OWCamera CurrentCamera { get; private set; }
         public static OWCamera PreviousCamera { get; private set; }
 

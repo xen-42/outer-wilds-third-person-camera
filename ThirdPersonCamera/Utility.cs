@@ -28,5 +28,14 @@ namespace ThirdPersonCamera
             if (current.parent == null) return "/" + current.name;
             return GetPath(current.parent) + "/" + current.name;
         }
+
+        public static void ChangeLayersRecursively(Transform transform, int layer)
+        {
+            transform.gameObject.layer = layer;
+            foreach(Transform child in transform)
+            {
+                ChangeLayersRecursively(child, layer);
+            }
+        }
     }
 }
