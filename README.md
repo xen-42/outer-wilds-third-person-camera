@@ -1,6 +1,6 @@
 # Outer Wilds Third Person Camera
 
-![3rd person OWDB thumbnail](https://user-images.githubusercontent.com/22628069/143732128-63ef39dc-a48c-4648-b109-855e37526776.png)
+![3rd person OWMDB thumbnail](https://user-images.githubusercontent.com/22628069/143732128-63ef39dc-a48c-4648-b109-855e37526776.png)
 
 Press V or the left directional button (Gamepad) to toggle between 1st and 3rd person.
 
@@ -17,4 +17,5 @@ Known issues:
 Wishlist (would be nice):
 - Allow 3rd person in the dream (need a new player model)
 
-![image](https://user-images.githubusercontent.com/22628069/142536103-386cda90-2d35-4c95-8e98-05e7ab2081cc.png)
+![Using the translator](https://user-images.githubusercontent.com/22628069/143732387-f3c82062-37d5-46d5-8b06-11500168d55a.png)
+![Using autopilot](https://user-images.githubusercontent.com/22628069/143732389-5b8e5d94-0f57-4c93-b5af-cf5e7123e9c9.png)
