@@ -168,6 +168,9 @@ namespace ThirdPersonCamera
             _ejected = false;
 
             CurrentCamera = Locator.GetPlayerCamera();
+
+            Locator.GetDreamWorldController().OnEnterLanternBounds += OnEnterLanternBounds;
+            Locator.GetDreamWorldController().OnExitLanternBounds += OnExitLanternBounds;
         }
 
         private float GetMinDistance()
@@ -276,6 +279,16 @@ namespace ThirdPersonCamera
                     cameraModeLocked = true;
                     break;
             }
+        }
+
+        private void OnEnterLanternBounds()
+        {
+            Locator.GetDreamWorldController().GetValue<SimulationCamera>("_simulationCamera").SetTargetCamera(Locator.GetActiveCamera());
+        }
+
+        private void OnExitLanternBounds()
+        {
+            Locator.GetDreamWorldController().GetValue<SimulationCamera>("_simulationCamera").SetTargetCamera(Locator.GetActiveCamera());
         }
 
         public void EnableCamera()

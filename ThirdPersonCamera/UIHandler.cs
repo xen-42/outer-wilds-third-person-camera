@@ -37,6 +37,8 @@ namespace ThirdPersonCamera
         private RectTransform _probeLauncherRectTransform;
         private RectTransform _signalscopeRectTransform;
 
+        private GameObject _sigScopeDisplay;
+
         public UIHandler()
         {
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
@@ -67,6 +69,8 @@ namespace ThirdPersonCamera
 
         public void Init()
         {
+            _sigScopeDisplay = Locator.GetShipBody().transform.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay").gameObject;
+
             Font font = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/SecondaryGroup/GForce/NumericalReadout/GravityText").GetComponent<Text>().font;
 
             // Canvas
@@ -281,11 +285,10 @@ namespace ThirdPersonCamera
             _waveformRenderer.gameObject.SetActive(visible);
 
             // Disappear the rest of the UI
-            GameObject sigScopeDisplay = GameObject.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay");
-            if (sigScopeDisplay != null)
+            if (_sigScopeDisplay != null)
             {
-                if(_shipSigScopeLocalScale == Vector3.zero) _shipSigScopeLocalScale = sigScopeDisplay.transform.localScale;
-                sigScopeDisplay.transform.localScale = visible ? Vector3.zero : _shipSigScopeLocalScale;
+                if(_shipSigScopeLocalScale == Vector3.zero) _shipSigScopeLocalScale = _sigScopeDisplay.transform.localScale;
+                _sigScopeDisplay.transform.localScale = visible ? Vector3.zero : _shipSigScopeLocalScale;
             }
         }
 
@@ -354,7 +357,7 @@ namespace ThirdPersonCamera
 
             // Signalscope frequency
             _signalScopeText.fontSize = (int)(24f * height / 1080f);
-            _signalscopeRectTransform.localPosition = new Vector3(0, (int)(0.58f * -height), 0);
+            _signalscopeRectTransform.localPosition = new Vector3(0, (int)(0.50f * -height), 0);
             _signalscopeRectTransform.sizeDelta = new Vector2((int)(width * 0.6f), (int)(height / 2f));
 
             // Signalscope distance
