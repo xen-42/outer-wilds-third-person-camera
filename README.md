@@ -14,6 +14,7 @@ There are a few settings in the options menu:
 Known issues:
 - Can target self with autopilot
 - Tools rotate with you when using free look
+- Free look in zero-g still rotates the player
 
 Todo:
 - Make different colour fire
