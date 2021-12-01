@@ -6,7 +6,7 @@ Press V or the left directional button (Gamepad) to toggle between 1st and 3rd p
 
 Scroll in/out to zoom in/out.
 
-There are two settings in the options menu:
+There are a few settings in the options menu:
 - Keep free look angle: You can freelook around your character while holding alt or the downward direction button (Gamepad). Toggling this option keeps the camera at that angle when you let go.
 - Use 3rd person by default: Determines if you start the game in 1st or 3rd person.
 - Use custom dreamer model: What it says
