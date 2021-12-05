@@ -393,14 +393,12 @@ namespace ThirdPersonCamera
                 {
                     toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
                 }
-                if (Gamepad.current != null)
-                {
-                    // Don't check this if we are in the signalscope with multiple frequencies available or if we have the probe launcher equiped but not in the ship (same button as change freq/photo mode)
-                    var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope) && PlayerData.KnowsMultipleFrequencies();
-                    var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe && !PlayerState.AtFlightConsole());
-                    if (!flag1 && !flag2)
-                        toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
-                }
+
+                // Don't check this if we are in the signalscope with multiple frequencies available or if we have the probe launcher equiped but not in the ship (same button as change freq/photo mode)
+                var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope) && PlayerData.KnowsMultipleFrequencies();
+                var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe && !PlayerState.AtFlightConsole());
+                if (!flag1 && !flag2)
+                    toggle |= OWInput.IsNewlyReleased(InputLibrary.toolOptionLeft);
             }
 
 
