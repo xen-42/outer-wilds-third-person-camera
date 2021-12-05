@@ -311,5 +311,16 @@ namespace ThirdPersonCamera
         {
             Main.OnBreakPlayerForceAlignment();
         }
+
+        public static bool OnVolumeAdded(HazardDetector __instance, EffectVolume eVolume)
+        {
+            if (!__instance.Equals(Locator.GetPlayerDetector().GetComponent<HazardDetector>())) return true;
+            HazardVolume hazardVolume = eVolume as HazardVolume;
+            if (hazardVolume.GetHazardType() != HazardVolume.HazardType.FIRE) return true;
+
+            // So the player detector has entered a fire
+            PlayerMeshHandler.InGreenFire = !hazardVolume.transform.parent.name.Equals("Effects_HEA_Campfire");
+            return true;
+        }
     }
 }

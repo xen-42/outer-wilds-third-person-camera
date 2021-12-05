@@ -83,6 +83,7 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCameraPlatform>("Awake", typeof(Patches), nameof(Patches.NomaiRemoteCameraPlatformAwake));
             ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnInitPlayerForceAlignment", typeof(Patches), nameof(Patches.OnInitPlayerForceAlignment));
             ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnBreakPlayerForceAlignment", typeof(Patches), nameof(Patches.OnBreakPlayerForceAlignment));
+            ModHelper.HarmonyHelper.AddPrefix<HazardDetector>("OnVolumeAdded", typeof(Patches), nameof(Patches.OnVolumeAdded));
 
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
