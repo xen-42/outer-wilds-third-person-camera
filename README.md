@@ -2,9 +2,9 @@
 
 ![3rd person OWMDB thumbnail](https://user-images.githubusercontent.com/22628069/143732128-63ef39dc-a48c-4648-b109-855e37526776.png)
 
-Press V or the left directional button (Gamepad) to toggle between 1st and 3rd person.
+Press V or the left directional button (Gamepad) to toggle between 1st and 3rd person. If you rebind the X axis option for tools then it changes to whatever that is.
 
-Scroll in/out to zoom in/out.
+Scroll in/out to zoom in/out. There are options in settings to change the default zoom (useful when on controller since you can't scroll).
 
 There are a few settings in the options menu:
 - Keep free look angle: You can freelook around your character while holding alt or the downward direction button (Gamepad). Toggling this option keeps the camera at that angle when you let go.
