@@ -17,7 +17,6 @@ namespace ThirdPersonCamera
 
         public HUDHandler()
         {
-            GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
             GlobalMessenger.AddListener("PutOnHelmet", new Callback(OnPutOnHelmet));
             GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
             GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
@@ -27,7 +26,6 @@ namespace ThirdPersonCamera
 
         public void OnDestroy()
         {
-            GlobalMessenger.RemoveListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
             GlobalMessenger.RemoveListener("PutOnHelmet", new Callback(OnPutOnHelmet));
             GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
             GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
@@ -50,21 +48,13 @@ namespace ThirdPersonCamera
                 ShowMarkers(true);
                 ShowCockpitLockOn(PlayerState.AtFlightConsole());
             }
-            if(camera.name == "MapCamera")
+            else
             {
                 ShowHelmetHUD(false);
                 ShowReticule(true);
                 ShowMarkers(false);
                 ShowCockpitLockOn(false);
             }
-        }
-
-        private void OnDeactivateThirdPersonCamera()
-        {
-            ShowHelmetHUD(false);
-            ShowReticule(true);
-            ShowMarkers(false);
-            ShowCockpitLockOn(false);
         }
 
         public void OnPutOnHelmet()
@@ -115,7 +105,6 @@ namespace ThirdPersonCamera
                 _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Scarf").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
             }
 
-            Main.WriteInfo(Utility.GetPath(GameObject.Find("DarkMatterBubble").transform));
             // Put bubble effects on the right camera
             if (_darkMatterBubble == null)
             {

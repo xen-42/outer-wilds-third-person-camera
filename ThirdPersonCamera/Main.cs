@@ -16,6 +16,7 @@ namespace ThirdPersonCamera
         public static bool IsLoaded { get; private set; } = false;
         private bool afterMemoryUplink = false;
         private bool _initNextTick = false;
+        public bool IsUsingFreeLook;
 
         public static Main SharedInstance { get; private set; }
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
@@ -27,6 +28,10 @@ namespace ThirdPersonCamera
         public static bool KeepFreeLookAngle { get; private set; }
         public static bool UseThirdPersonByDefault { get; private set; }
         public static bool UseCustomDreamerModel { get; private set; }
+
+        public static float DefaultPlayerDistance { get; private set; }
+        public static float DefaultPlayerSuitDistance { get; private set; }
+        public static float DefaultShipDistance { get; private set; }
 
         private void Start()
         {
@@ -76,6 +81,8 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<HUDCamera>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.HUDCameraOnSwitchActiveCamera));
             ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCamera>("LateUpdate", typeof(Patches), nameof(Patches.NomaiRemoteCameraLateUpdate));
             ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCameraPlatform>("Awake", typeof(Patches), nameof(Patches.NomaiRemoteCameraPlatformAwake));
+            ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnInitPlayerForceAlignment", typeof(Patches), nameof(Patches.OnInitPlayerForceAlignment));
+            ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnBreakPlayerForceAlignment", typeof(Patches), nameof(Patches.OnBreakPlayerForceAlignment));
 
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
@@ -97,6 +104,15 @@ namespace ThirdPersonCamera
             KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
             UseThirdPersonByDefault = config.GetSettingsValue<bool>("Use 3rd person by default");
             UseCustomDreamerModel = config.GetSettingsValue<bool>("Use custom dreamer model");
+
+            DefaultPlayerDistance = config.GetSettingsValue<float>("Default camera zoom (no suit)");
+            DefaultPlayerSuitDistance = config.GetSettingsValue<float>("Default camera zoom (suit)");
+            DefaultShipDistance = config.GetSettingsValue<float>("Default camera zoom (ship)");
+            
+            if(ThirdPersonCamera != null)
+            {
+                ThirdPersonCamera.SetDefaultDistanceSettings(PlayerState.AtFlightConsole());
+            }
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -174,7 +190,8 @@ namespace ThirdPersonCamera
 
         public static bool IsThirdPerson()
         {
-            return ThirdPersonCamera.CameraEnabled && ThirdPersonCamera.CameraActive;
+            // Also going to count if they're using static camera because why not
+            return (ThirdPersonCamera.CameraEnabled && ThirdPersonCamera.CameraActive) || Locator.GetActiveCamera().name == "StaticCamera";
         }
 
         public static void OnFinishOpenEyes()
@@ -193,6 +210,40 @@ namespace ThirdPersonCamera
             else
             {
                 ThirdPersonCamera.EnableCamera();
+            }
+        }
+
+        public static void OnInitPlayerForceAlignment()
+        {
+            // No longer zero G
+            if(Main.SharedInstance.IsUsingFreeLook)
+            {
+                Locator.GetPlayerController().UnlockMovement();
+            }
+        }
+
+        public static void OnBreakPlayerForceAlignment()
+        {
+            // In zero G
+            if (Main.SharedInstance.IsUsingFreeLook)
+            {
+                Locator.GetPlayerController().LockMovement(true);
+            }
+        }
+
+        public static void OnStartFreeLook()
+        {
+            if(PlayerState.InZeroG())
+            {
+                Locator.GetPlayerController().LockMovement(true);
+            }
+        }
+
+        public static void OnStopFreeLook()
+        {
+            if (PlayerState.InZeroG())
+            {
+                Locator.GetPlayerController().UnlockMovement();
             }
         }
 

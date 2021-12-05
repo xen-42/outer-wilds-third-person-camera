@@ -1,14 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Reflection;
-using OWML.ModHelper;
-using OWML.Common;
 
 namespace ThirdPersonCamera
 {
@@ -58,10 +52,20 @@ namespace ThirdPersonCamera
         {
             // Not sure who gets the event first
             bool flag = false;
+            string currentCamera;
+            string previousCamera;
 
             // If we switched from ThirdPersonCamera to PlayerCamera or vice versa we don't want to do anything
-            string currentCamera = ThirdPersonCamera.CurrentCamera.name;
-            string previousCamera = ThirdPersonCamera.PreviousCamera.name;
+            try
+            {
+                currentCamera = ThirdPersonCamera.CurrentCamera.name;
+                previousCamera = ThirdPersonCamera.PreviousCamera.name;
+            }
+            catch(Exception)
+            {
+                // If something goes wrong just run the original method.
+                return true;
+            }
 
             // If we got the event first
             flag |= currentCamera == "PlayerCamera" && previousCamera == "ThirdPersonCamera";
@@ -135,9 +139,22 @@ namespace ThirdPersonCamera
                 bool flag2 = Main.KeepFreeLookAngle;
                 if (flag || flag2)
                 {
+                    if (!Main.SharedInstance.IsUsingFreeLook)
+                    {
+                        Main.SharedInstance.IsUsingFreeLook = true;
+                        Main.OnStartFreeLook();
+                    }
                     ____degreesY = Mathf.Clamp(____degreesY, -80f, 80f);
                 }
-                else return true;
+                else
+                {
+                    if (Main.SharedInstance.IsUsingFreeLook)
+                    {
+                        Main.SharedInstance.IsUsingFreeLook = false;
+                        Main.OnStopFreeLook();
+                    }
+                    return true;
+                }
             }
             ____rotationX = Quaternion.AngleAxis(____degreesX, Vector3.up);
             ____rotationY = Quaternion.AngleAxis(____degreesY, -Vector3.right);
@@ -174,6 +191,7 @@ namespace ThirdPersonCamera
             // When ending freelook makes you take the shortest path back, also enables it for when you did it out of the ship
             if (OWInput.IsNewlyReleased(InputLibrary.freeLook, InputMode.All))
             {
+                Main.OnStopFreeLook();
                 if (____degreesX > 180f) ____degreesX -= 360f;
                 if (____degreesX < -180f) ____degreesX += 360f;
             }
@@ -278,10 +296,20 @@ namespace ThirdPersonCamera
             var helmet = ____playerHologram.GetChild(0).Find("Traveller_Mesh_v01:Traveller_Geo").Find("Traveller_Mesh_v01:PlayerSuit_Helmet");
 
             if (head != null) head.gameObject.layer = 27;
-            else Main.WriteWarning("Couldn't find head");
+            else Main.WriteWarning("Couldn't find hologram head");
             if (helmet != null) helmet.gameObject.layer = 27;
-            else Main.WriteWarning("Couldn't find helmet");
+            else Main.WriteWarning("Couldn't find hologram helmet");
             return true;
+        }
+
+        public static void OnInitPlayerForceAlignment()
+        {
+            Main.OnInitPlayerForceAlignment();
+        }
+
+        public static void OnBreakPlayerForceAlignment()
+        {
+            Main.OnBreakPlayerForceAlignment();
         }
     }
 }

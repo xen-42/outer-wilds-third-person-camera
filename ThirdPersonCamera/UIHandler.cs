@@ -43,7 +43,6 @@ namespace ThirdPersonCamera
         {
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
             GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
             GlobalMessenger.AddListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
@@ -57,7 +56,6 @@ namespace ThirdPersonCamera
         {
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.RemoveListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
             GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
             GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
             GlobalMessenger.RemoveListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
@@ -218,14 +216,6 @@ namespace ThirdPersonCamera
             }
         }
 
-        private void OnDeactivateThirdPersonCamera()
-        {
-            ShipText.gameObject.SetActive(false);
-            TranslatorText.gameObject.SetActive(false);
-            SetSignalScopeUIVisible(false);
-            _shipProbeLauncherImage.gameObject.SetActive(false);
-        }
-
         private void OnExitFlightConsole()
         {
             ShipText.gameObject.SetActive(false);
@@ -240,19 +230,19 @@ namespace ThirdPersonCamera
 
         private void OnSwitchActiveCamera(OWCamera camera)
         {
-            if (camera.name == "MapCamera")
-            {
-                ShipText.gameObject.SetActive(false);
-                TranslatorText.gameObject.SetActive(false);
-                SetSignalScopeUIVisible(false);
-                _shipProbeLauncherImage.gameObject.SetActive(false);
-            }
             if (camera.name == "ThirdPersonCamera")
             {
                 ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
                 TranslatorText.gameObject.SetActive(_isTranslatorEquiped);
                 SetSignalScopeUIVisible(PlayerState.AtFlightConsole() && _isSignalScopeEquiped);
                 _shipProbeLauncherImage.gameObject.SetActive(PlayerState.AtFlightConsole() && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+            }
+            else
+            {
+                ShipText.gameObject.SetActive(false);
+                TranslatorText.gameObject.SetActive(false);
+                SetSignalScopeUIVisible(false);
+                _shipProbeLauncherImage.gameObject.SetActive(false);
             }
         }
 
@@ -338,8 +328,6 @@ namespace ThirdPersonCamera
 
             var height = PlayerData.GetGraphicSettings().displayResHeight;
             var width = PlayerData.GetGraphicSettings().displayResWidth;
-            
-            Main.WriteInfo($"Reseting graphics sizes {height}, {width}");
 
             // Ship
             ShipText.fontSize = (int)(24f * height / 1080f);

@@ -24,24 +24,26 @@ namespace ThirdPersonCamera
         private GameObject helmetMesh;
         private GameObject head;
 
+        private GameObject ghostTorso;
+        private GameObject ghostHead;
+        private GameObject ghostEyes;
+
         public PlayerMeshHandler()
         {
-            GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
-            GlobalMessenger.AddListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
             GlobalMessenger.AddListener("PutOnHelmet", new Callback(OnPutOnHelmet));
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
         }
 
         public void OnDestroy()
         {
-            GlobalMessenger.RemoveListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
-            GlobalMessenger.RemoveListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
             GlobalMessenger.RemoveListener("PutOnHelmet", new Callback(OnPutOnHelmet));
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
         }
 
         public void Init()
@@ -66,9 +68,9 @@ namespace ThirdPersonCamera
                     var ghostMaterial = GameObject.Find("SIM_GhostBirdBody").GetComponent<MeshRenderer>().material;
                     var ghostShader = Shader.Find("Outer Wilds/Environment/Invisible Planet/Cyberspace");
 
-                    var ghostTorso = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_torso.obj", "assets\\tex.png");
-                    var ghostHead = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_head.obj", "assets\\tex.png");
-                    var ghostEyes = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_eyes.obj", "assets\\tex.png");
+                    ghostTorso = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_torso.obj", "assets\\tex.png");
+                    ghostHead = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_head.obj", "assets\\tex.png");
+                    ghostEyes = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_eyes.obj", "assets\\tex.png");
                     var depth = Main.SharedInstance.ModHelper.Assets.GetTexture("assets\\tex.png");
 
                     ghostTorso.SetActive(true);
@@ -124,24 +126,25 @@ namespace ThirdPersonCamera
             }
         }
 
-        private void OnDeactivateThirdPersonCamera()
+        private void OnSwitchActiveCamera(OWCamera camera)
         {
-            SetArmVisibility(!_isToolHeld);
-            SetHeadVisibility(false);
-            _fireRenderer.enabled = false;
-        }
-
-        private void OnActivateThirdPersonCamera()
-        {
-            SetArmVisibility(true);
-            SetHeadVisibility(true);
-            _fireRenderer.enabled = fade > 0f;
+            if(camera.name == "ThirdPersonCamera" || camera.name == "StaticCamera")
+            {
+                SetArmVisibility(true);
+                SetHeadVisible();
+                _fireRenderer.enabled = fade > 0f;
+            }
+            else
+            {
+                SetArmVisibility(!_isToolHeld);
+                _fireRenderer.enabled = false;
+            }
         }
 
         private void OnToolEquiped(PlayerTool _)
         {
             _isToolHeld = true;
-            if (Main.IsThirdPerson()) _setArmVisibleNextTick = true;
+            if (Main.IsThirdPerson() || Locator.GetActiveCamera().name == "StaticCamera") _setArmVisibleNextTick = true;
         }
 
         private void OnToolUnequiped(PlayerTool _)
@@ -168,15 +171,15 @@ namespace ThirdPersonCamera
 
         private void OnRemoveHelmet()
         {
-            SetHeadVisibility(true);
+            SetHeadVisible();
         }
 
         private void OnPutOnHelmet()
         {
-            SetHeadVisibility(true);
+            SetHeadVisible();
         }
 
-        private void SetHeadVisibility(bool visible)
+        private void SetHeadVisible()
         {
             if (Locator.GetPlayerSuit().IsWearingHelmet())
             {

@@ -22,17 +22,14 @@ namespace ThirdPersonCamera
         private float _distance = 0f;
         private float _desiredDistance = 0f;
 
-        private const float MIN_PLAYER_DISTANCE = 1f;
-        private const float DEFAULT_PLAYER_DISTANCE = 3f;
-        private const float MAX_PLAYER_DISTANCE = 10.0f;
+        public const float MIN_PLAYER_DISTANCE = 1f;
+        public const float MAX_PLAYER_DISTANCE = 10.0f;
 
-        private const float MIN_PLAYER_SUIT_DISTANCE = 1.5f;
-        private const float DEFAULT_PLAYER_SUIT_DISTANCE = 4f;
-        private const float MAX_PLAYER_SUIT_DISTANCE = 15f;
+        public const float MIN_PLAYER_SUIT_DISTANCE = 1.5f;
+        public const float MAX_PLAYER_SUIT_DISTANCE = 15f;
 
-        private const float MIN_SHIP_DISTANCE = 10f;
-        private const float DEFAULT_SHIP_DISTANCE = 25f;
-        private const float MAX_SHIP_DISTANCE = 60f;
+        public const float MIN_SHIP_DISTANCE = 10f;
+        public const float MAX_SHIP_DISTANCE = 60f;
 
         private const float CAMERA_SPEED = 4.0f;
 
@@ -128,7 +125,7 @@ namespace ThirdPersonCamera
             OWCamera = _thirdPersonCamera.AddComponent<OWCamera>();
             OWCamera.renderSkybox = true;
 
-            _desiredDistance = DEFAULT_PLAYER_DISTANCE;
+            _desiredDistance = MIN_PLAYER_DISTANCE + Main.DefaultPlayerDistance * (MAX_PLAYER_DISTANCE - MIN_PLAYER_DISTANCE);
         }
 
         public void Init()
@@ -209,9 +206,14 @@ namespace ThirdPersonCamera
             float maxDistance = GetMaxDistance();
 
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
-            if (piloting) _desiredDistance = DEFAULT_SHIP_DISTANCE;
-            else if (Locator.GetPlayerSuit().IsWearingSuit()) _desiredDistance = DEFAULT_PLAYER_SUIT_DISTANCE;
-            else _desiredDistance = DEFAULT_PLAYER_DISTANCE; ;
+            SetDefaultDistanceSettings(piloting);
+        }
+
+        public void SetDefaultDistanceSettings(bool piloting)
+        {
+            if (piloting) _desiredDistance = MIN_SHIP_DISTANCE + Main.DefaultShipDistance * (MAX_SHIP_DISTANCE - MIN_SHIP_DISTANCE);
+            else if (Locator.GetPlayerSuit().IsWearingSuit()) _desiredDistance = MIN_PLAYER_SUIT_DISTANCE + Main.DefaultPlayerSuitDistance * (MAX_PLAYER_SUIT_DISTANCE - MIN_PLAYER_SUIT_DISTANCE);
+            else _desiredDistance = MIN_PLAYER_DISTANCE + Main.DefaultPlayerDistance * (MAX_PLAYER_DISTANCE - MIN_PLAYER_DISTANCE);
         }
 
         private void OnRoastingStickActivate()
@@ -237,7 +239,7 @@ namespace ThirdPersonCamera
             PreviousCamera = CurrentCamera;
             CurrentCamera = camera;
 
-            Main.WriteInfo($"Switched from {PreviousCamera.name} to {CurrentCamera.name}");
+            Main.WriteInfo($"Switched from {PreviousCamera?.name} to {CurrentCamera?.name}");
 
             switch (PreviousCamera.name)
             {
@@ -334,7 +336,6 @@ namespace ThirdPersonCamera
             Main.WriteInfo("Activate third person camera");
 
             CameraActive = true;
-            GlobalMessenger.FireEvent("ActivateThirdPersonCamera");
 
             // Don't actually change camera because here we just move it
             if (CurrentCamera.name.Equals("RemoteViewerCamera")) return;
@@ -366,8 +367,6 @@ namespace ThirdPersonCamera
             // Only if the player chose this do we record it as inactive
             if (CameraEnabled) CameraActive = false;
 
-            GlobalMessenger.FireEvent("DeactivateThirdPersonCamera");
-
             // Don't actually change camera because here we just move it
             if (CurrentCamera.name.Equals("RemoteViewerCamera")) return;
 
@@ -388,14 +387,22 @@ namespace ThirdPersonCamera
         public void Update()
         {
             bool toggle = false;
-            if (Keyboard.current != null)
+            if(!OWInput.IsInputMode(InputMode.Menu))
             {
-                toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
+                if (Keyboard.current != null)
+                {
+                    toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
+                }
+                if (Gamepad.current != null)
+                {
+                    // Don't check this if we are in the signalscope with multiple frequencies available or if we have the probe launcher equiped but not in the ship (same button as change freq/photo mode)
+                    var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope) && PlayerData.KnowsMultipleFrequencies();
+                    var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe && !PlayerState.AtFlightConsole());
+                    if (!flag1 && !flag2)
+                        toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
+                }
             }
-            if (Gamepad.current != null)
-            {
-                toggle |= Gamepad.current[UnityEngine.InputSystem.LowLevel.GamepadButton.DpadLeft].wasReleasedThisFrame;
-            }
+
 
             if (!CameraEnabled)
             {
@@ -467,7 +474,6 @@ namespace ThirdPersonCamera
                 int layerMask = OWLayerMask.physicalMask;
                 if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, _desiredDistance, layerMask))
                 {
-                    //Main.WriteInfo($"{hitInfo.collider.gameObject.layer}");
                     _distance = Mathf.Clamp(_distance, 0f, hitInfo.distance * 0.8f); // Try to avoid seeing through curved walls
                 }
                 if (PlayerState.AtFlightConsole()) Locator.GetShipBody().EnableCollisionDetection();

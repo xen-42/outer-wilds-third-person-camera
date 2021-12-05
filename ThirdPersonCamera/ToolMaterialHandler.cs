@@ -24,8 +24,8 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("OnRetrieveProbe", new Callback(OnRetrieveProbe));
             GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.AddListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
-            GlobalMessenger.AddListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
+            GlobalMessenger.AddListener("EnterDreamWorld", new Callback(OnEnterDreamWorld));
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
         }
 
         public void OnDestroy()
@@ -33,13 +33,19 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("OnRetrieveProbe", new Callback(OnRetrieveProbe));
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.RemoveListener("DeactivateThirdPersonCamera", new Callback(OnDeactivateThirdPersonCamera));
-            GlobalMessenger.RemoveListener("ActivateThirdPersonCamera", new Callback(OnActivateThirdPersonCamera));
+            GlobalMessenger.RemoveListener("EnterDreamWorld", new Callback(OnEnterDreamWorld));
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
         }
 
         public void OnRetrieveProbe()
         {
             SetToolMaterials(Main.IsThirdPerson());
+        }
+
+        public void OnEnterDreamWorld()
+        {
+            // When entering dream world I think it gives a new artifact
+            OnToolEquiped(Locator.GetToolModeSwapper().GetItemCarryTool());
         }
 
         public void OnToolEquiped(PlayerTool tool)
@@ -65,16 +71,18 @@ namespace ThirdPersonCamera
             _heldTool = null;
         }
 
-        public void OnDeactivateThirdPersonCamera()
+        public void OnSwitchActiveCamera(OWCamera camera)
         {
-            SetToolMaterials(false);
-            // Double check we're still holding it
-            if (_heldTool != null && !_heldTool.IsEquipped()) _heldTool = null;
-        }
-
-        public void OnActivateThirdPersonCamera()
-        {
-            SetToolMaterials(true);
+            if(camera.name == "ThirdPersonCamera" || camera.name == "StaticCamera")
+            {
+                SetToolMaterials(true);
+            }
+            else
+            {
+                SetToolMaterials(false);
+                // Double check we're still holding it
+                if (_heldTool != null && !_heldTool.IsEquipped()) _heldTool = null;
+            }
         }
 
         private void SetToolMaterials(bool thirdPerson)
