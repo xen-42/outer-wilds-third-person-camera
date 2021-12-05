@@ -19,6 +19,8 @@ namespace ThirdPersonCamera
         private readonly string[] resizingExemptTools = { "NomaiTranslatorProp", "ProbeLauncher", "TutorialCamera_Base", "TutorialProbeLauncher_Base" };
         private bool _hasFixedProbeLauncher = false;
 
+        private bool _checkToolEquipNextTick = false;
+
         public ToolMaterialHandler()
         {
             GlobalMessenger.AddListener("OnRetrieveProbe", new Callback(OnRetrieveProbe));
@@ -31,6 +33,7 @@ namespace ThirdPersonCamera
         public void OnDestroy()
         {
             GlobalMessenger.RemoveListener("OnRetrieveProbe", new Callback(OnRetrieveProbe));
+            GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
             GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
             GlobalMessenger.RemoveListener("EnterDreamWorld", new Callback(OnEnterDreamWorld));
@@ -45,7 +48,7 @@ namespace ThirdPersonCamera
         public void OnEnterDreamWorld()
         {
             // When entering dream world I think it gives a new artifact
-            OnToolEquiped(Locator.GetToolModeSwapper().GetItemCarryTool());
+            _checkToolEquipNextTick = true;
         }
 
         public void OnToolEquiped(PlayerTool tool)
@@ -125,6 +128,11 @@ namespace ThirdPersonCamera
             {
                 SetToolMaterials(true);
                 _thirdPersonMaterialNextTick = false;
+            }
+
+            if (_checkToolEquipNextTick)
+            {
+                OnToolEquiped(Locator.GetToolModeSwapper().GetItemCarryTool());
             }
         }
     }

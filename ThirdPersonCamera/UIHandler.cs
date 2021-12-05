@@ -118,6 +118,9 @@ namespace ThirdPersonCamera
             _probeLauncherRectTransform.localScale = Vector3.one;
 
             _shipProbeLauncherImage = imgObject.AddComponent<Image>();
+            var colour = _shipProbeLauncherImage.color;
+            colour.a = 0.8f;
+            _shipProbeLauncherImage.color = colour;
             imgObject.transform.SetParent(canvas.transform);
             imgObject.SetActive(false);
 
