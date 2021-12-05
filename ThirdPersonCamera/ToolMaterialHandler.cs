@@ -133,6 +133,7 @@ namespace ThirdPersonCamera
             if (_checkToolEquipNextTick)
             {
                 OnToolEquiped(Locator.GetToolModeSwapper().GetItemCarryTool());
+                _checkToolEquipNextTick = false;
             }
         }
     }
