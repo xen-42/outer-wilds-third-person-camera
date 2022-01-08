@@ -123,13 +123,18 @@ namespace ThirdPersonCamera
         public static void PostFindReferenceFrameInLineOfSight()
         {
             Locator.GetPlayerBody().EnableCollisionDetection();
-            Locator.GetShipBody().EnableCollisionDetection();
+            if(Locator.GetShipBody() != null)
+                Locator.GetShipBody().EnableCollisionDetection();
         }
 
         public static bool UpdateRotation(PlayerCameraController __instance, ref float ____degreesX, ref float ____degreesY, OWCamera ____playerCamera, bool ____isSnapping,
                 ShipCockpitController ____shipController, Quaternion ____rotationX, Quaternion ____rotationY)
         {
-            if (!Main.IsThirdPerson() || (!OWInput.IsPressed(InputLibrary.freeLook, 0f) && !Main.KeepFreeLookAngle)) return true;
+            if (!Main.IsThirdPerson() || (!OWInput.IsPressed(InputLibrary.freeLook, 0f) && !Main.KeepFreeLookAngle))
+            {
+                Main.SharedInstance.IsUsingFreeLook = false;
+                return true;
+            }
 
             ____degreesX %= 360f;
             ____degreesY %= 360f;

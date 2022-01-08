@@ -88,57 +88,64 @@ namespace ThirdPersonCamera
 
         private void ShowHelmetHUD(bool visible)
         {
-            if(_helmetOffUI != null) foreach (Canvas canvas in _helmetOffUI)
+            try
             {
-                canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
-            }
-            
-            if (_helmet != null)
-            {
-                // Reparent the HUDCamera stuff
-                _helmet.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
-                _helmet.transform.localPosition = Vector3.zero;
+                if (_helmetOffUI != null) foreach (Canvas canvas in _helmetOffUI)
+                    {
+                        canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
+                    }
 
-                // Get rid of 2D helmet stuff
-                _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Helmet").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
-                _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/HelmetFrame").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
-                _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Scarf").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
-            }
+                if (_helmet != null)
+                {
+                    // Reparent the HUDCamera stuff
+                    _helmet.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
+                    _helmet.transform.localPosition = Vector3.zero;
 
-            // Put bubble effects on the right camera
-            if (_darkMatterBubble == null)
-            {
-                try
-                {
-                    _darkMatterBubble = Locator.GetPlayerCamera().transform.Find("ScreenEffects/DarkMatterBubble").gameObject;
+                    // Get rid of 2D helmet stuff
+                    _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Helmet").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+                    _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/HelmetFrame").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
+                    _helmet.transform.Find("HelmetRoot/HelmetMesh/HUD_Helmet_v2/Scarf").transform.localScale = Main.IsThirdPerson() ? new Vector3(0, 0, 0) : new Vector3(1, 1, 1);
                 }
-                catch(Exception)
+
+                // Put bubble effects on the right camera
+                if (_darkMatterBubble == null)
                 {
-                    Main.WriteWarning("Couldn't find DarkMatterBubble");
+                    try
+                    {
+                        _darkMatterBubble = Locator.GetPlayerCamera().transform.Find("ScreenEffects/DarkMatterBubble").gameObject;
+                    }
+                    catch (Exception)
+                    {
+                        Main.WriteWarning("Couldn't find DarkMatterBubble");
+                    }
                 }
-            }
-            if (_darkMatterBubble != null)
-            {
-                _darkMatterBubble.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
-                _darkMatterBubble.transform.localPosition = Vector3.zero;
-            }
+                if (_darkMatterBubble != null)
+                {
+                    _darkMatterBubble.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
+                    _darkMatterBubble.transform.localPosition = Vector3.zero;
+                }
 
 
-            if (_lightFlickerEffectBubble == null) 
-            {
-                try
+                if (_lightFlickerEffectBubble == null)
                 {
-                    _lightFlickerEffectBubble = Locator.GetPlayerCamera().transform.Find("ScreenEffects/LightFlickerEffectBubble").gameObject;
+                    try
+                    {
+                        _lightFlickerEffectBubble = Locator.GetPlayerCamera().transform.Find("ScreenEffects/LightFlickerEffectBubble").gameObject;
+                    }
+                    catch (Exception)
+                    {
+                        Main.WriteWarning("Couldn't find LightFlickerEffectBubble");
+                    }
                 }
-                catch(Exception)
+                if (_lightFlickerEffectBubble != null)
                 {
-                    Main.WriteWarning("Couldn't find LightFlickerEffectBubble");
+                    _lightFlickerEffectBubble.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
+                    _lightFlickerEffectBubble.transform.localPosition = Vector3.zero;
                 }
             }
-            if (_lightFlickerEffectBubble != null)
+            catch(Exception e)
             {
-                _lightFlickerEffectBubble.transform.parent = Main.IsThirdPerson() ? ThirdPersonCamera.GetCamera().transform : Locator.GetPlayerCamera().transform;
-                _lightFlickerEffectBubble.transform.localPosition = Vector3.zero;
+                Main.WriteError($"{e.StackTrace}, {e.Message}");
             }
         }
 

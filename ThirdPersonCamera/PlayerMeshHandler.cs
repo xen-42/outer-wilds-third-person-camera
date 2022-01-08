@@ -13,6 +13,8 @@ namespace ThirdPersonCamera
         private bool _setArmVisibleNextTick = false;
 
         private MeshRenderer _fireRenderer;
+        private MeshRenderer _dreamFireRenderer;
+        private MeshRenderer _activeFireRenderer;
         private HazardDetector _hazardDetector;
         private float fade = 0f;
         private bool inFire = false;
@@ -24,9 +26,10 @@ namespace ThirdPersonCamera
         private GameObject helmetMesh;
         private GameObject head;
 
-        private GameObject ghostTorso;
-        private GameObject ghostHead;
-        private GameObject ghostEyes;
+        private AssetBundle assetBundle;
+        private GameObject ghostPrefab;
+
+        public static bool InGreenFire = false;
 
         public PlayerMeshHandler()
         {
@@ -48,12 +51,26 @@ namespace ThirdPersonCamera
 
         public void Init()
         {
-            var campfire = GameObject.Find("/Moon_Body/Sector_THM/Interactables_THM/Effects_HEA_Campfire/Props_HEA_Campfire/Campfire_Flames");
+            try
+            {
+                var campfire = GameObject.Find("/Moon_Body/Sector_THM/Interactables_THM/Effects_HEA_Campfire/Props_HEA_Campfire/Campfire_Flames");
 
-            _fireRenderer = GameObject.Instantiate(campfire.GetComponent<MeshRenderer>(), Locator.GetPlayerBody().transform);
-            _fireRenderer.transform.localScale = new Vector3(0.8f, 2f, 0.8f);
-            _fireRenderer.transform.localPosition = new Vector3(0, -1.2f, -0.25f);
-            _fireRenderer.enabled = false;
+                _fireRenderer = GameObject.Instantiate(campfire.GetComponent<MeshRenderer>(), Locator.GetPlayerBody().transform);
+                _fireRenderer.transform.localScale = new Vector3(0.8f, 2f, 0.8f);
+                _fireRenderer.transform.localPosition = new Vector3(0, -1.2f, -0.25f);
+                _fireRenderer.enabled = false;
+            }
+            catch (Exception) { }
+
+            try
+            {
+                var dreamCampfire = GameObject.Find("/RingWorld_Body/Sector_RingInterior/Sector_Zone1/Sector_DreamFireHouse_Zone1/Interactables_DreamFireHouse_Zone1/DreamFireChamber/Prefab_IP_DreamCampfire/Props_IP_DreamFire/DreamFire_Flames");
+                _dreamFireRenderer = GameObject.Instantiate(dreamCampfire.GetComponent<MeshRenderer>(), Locator.GetPlayerBody().transform);
+                _dreamFireRenderer.transform.localScale = new Vector3(0.8f, 2f, 0.8f);
+                _dreamFireRenderer.transform.localPosition = new Vector3(0, -1.6f, -0.25f);
+                _dreamFireRenderer.enabled = false;
+            }
+            catch(Exception) { }
 
             _hazardDetector = Locator.GetPlayerController().GetComponentInChildren<HazardDetector>();
             _hazardDetector.OnHazardsUpdated += OnHazardsUpdated;
@@ -64,45 +81,57 @@ namespace ThirdPersonCamera
             {
                 if (Main.UseCustomDreamerModel)
                 {
-                    var playerTransform = Locator.GetPlayerBody().transform;
-                    var ghostMaterial = GameObject.Find("SIM_GhostBirdBody").GetComponent<MeshRenderer>().material;
-                    var ghostShader = Shader.Find("Outer Wilds/Environment/Invisible Planet/Cyberspace");
+                    if (assetBundle == null) assetBundle = Main.SharedInstance.ModHelper.Assets.LoadBundle("assets/ghost-hatchling");
+                    if (ghostPrefab == null)
+                    {
+                        ghostPrefab = assetBundle.LoadAsset<GameObject>("Assets/Player Ghost/Ghost.prefab");
+                        ghostPrefab.SetActive(false);
+                    }
 
-                    ghostTorso = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_torso.obj", "assets\\tex.png");
-                    ghostHead = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_head.obj", "assets\\tex.png");
-                    ghostEyes = Main.SharedInstance.ModHelper.Assets.Get3DObject("assets\\ghost_eyes.obj", "assets\\tex.png");
-                    var depth = Main.SharedInstance.ModHelper.Assets.GetTexture("assets\\tex.png");
+                    var ghost = GameObject.Instantiate(ghostPrefab, Locator.GetPlayerTransform());
+                    ghost.transform.localScale = 0.25f * Vector3.one;
+                    ghost.transform.localPosition = Vector3.zero;
+                    ghost.SetActive(true);
 
-                    ghostTorso.SetActive(true);
-                    ghostTorso.transform.parent = playerTransform;
-                    ghostTorso.transform.localPosition = 0.3f * Vector3.up + 0.3f * Vector3.back;
-                    ghostTorso.transform.localRotation = Quaternion.AngleAxis(5, Vector3.right);
-                    ghostTorso.transform.localScale = 0.25f * Vector3.one;
-                    ghostTorso.layer = 28;
-                    ghostTorso.name = "PlayerGhostTorso";
-                    ghostTorso.GetComponent<MeshRenderer>().material = new Material(ghostShader);
-                    ghostTorso.GetComponent<MeshRenderer>().material.CopyPropertiesFromMaterial(ghostMaterial);
+                    var backRoot = Locator.GetPlayerTransform().Find("Traveller_HEA_Player_v2/Traveller_Rig_v01:Traveller_Trajectory_Jnt/Traveller_Rig_v01:Traveller_ROOT_Jnt/Traveller_Rig_v01:Traveller_Spine_01_Jnt/Traveller_Rig_v01:Traveller_Spine_02_Jnt");
+                    var headRoot = Locator.GetPlayerTransform().Find("Traveller_HEA_Player_v2/Traveller_Rig_v01:Traveller_Trajectory_Jnt/Traveller_Rig_v01:Traveller_ROOT_Jnt/Traveller_Rig_v01:Traveller_Spine_01_Jnt/Traveller_Rig_v01:Traveller_Spine_02_Jnt/Traveller_Rig_v01:Traveller_Spine_Top_Jnt/Traveller_Rig_v01:Traveller_Neck_01_Jnt/Traveller_Rig_v01:Traveller_Neck_Top_Jnt/Traveller_Rig_v01:Traveller_Head_Top_Jnt");
+                    var leftHandRoot = Locator.GetPlayerTransform().Find("Traveller_HEA_Player_v2/Traveller_Rig_v01:Traveller_Trajectory_Jnt/Traveller_Rig_v01:Traveller_ROOT_Jnt/Traveller_Rig_v01:Traveller_Spine_01_Jnt/Traveller_Rig_v01:Traveller_Spine_02_Jnt/Traveller_Rig_v01:Traveller_Spine_Top_Jnt/Traveller_Rig_v01:Traveller_LF_Arm_Clavicle_Jnt/Traveller_Rig_v01:Traveller_LF_Arm_Shoulder_Jnt/Traveller_Rig_v01:Traveller_LF_Arm_Elbow_Jnt/Traveller_Rig_v01:Traveller_LF_Arm_Wrist_Jnt");
+                    var rightHandRoot = Locator.GetPlayerTransform().Find("Traveller_HEA_Player_v2/Traveller_Rig_v01:Traveller_Trajectory_Jnt/Traveller_Rig_v01:Traveller_ROOT_Jnt/Traveller_Rig_v01:Traveller_Spine_01_Jnt/Traveller_Rig_v01:Traveller_Spine_02_Jnt/Traveller_Rig_v01:Traveller_Spine_Top_Jnt/Traveller_Rig_v01:Traveller_RT_Arm_Clavicle_Jnt/Traveller_Rig_v01:Traveller_RT_Arm_Shoulder_Jnt/Traveller_Rig_v01:Traveller_RT_Arm_Elbow_Jnt/Traveller_Rig_v01:Traveller_RT_Arm_Wrist_Jnt");
 
-                    ghostHead.SetActive(true);
-                    ghostHead.transform.parent = playerTransform;
-                    ghostHead.transform.position = Locator.GetPlayerCamera().transform.position + playerTransform.TransformDirection(Vector3.back) * 0.3f;
-                    ghostHead.transform.localRotation = Quaternion.AngleAxis(-90, Vector3.up);
-                    ghostHead.transform.localScale = 0.15f * Vector3.one;
-                    ghostHead.layer = 28;
-                    ghostHead.name = "PlayerGhostHead";
-                    ghostHead.GetComponent<MeshRenderer>().material = new Material(ghostShader);
-                    ghostHead.GetComponent<MeshRenderer>().material.CopyPropertiesFromMaterial(ghostMaterial);
+                    var head = ghost.transform.Find("Head");
+                    var eyes = ghost.transform.Find("Eyes");
+                    eyes.transform.parent = head;
+                    head.transform.parent = headRoot;
+                    head.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                    head.transform.localScale = 1.25f * Vector3.one;
+                    head.transform.localPosition = new Vector3(2, -1, 0);
 
-                    ghostEyes.SetActive(true);
-                    ghostEyes.transform.parent = ghostHead.transform;
-                    ghostEyes.transform.localPosition = Vector3.zero;
-                    ghostEyes.transform.rotation = ghostHead.transform.rotation;
-                    ghostEyes.transform.localScale = Vector3.one;
-                    ghostEyes.layer = 28;
-                    ghostEyes.name = "PlayerGhostEyes";
-                    ghostEyes.GetComponent<MeshRenderer>().material = new Material(Shader.Find("Standard"));
-                    ghostEyes.GetComponent<MeshRenderer>().material.EnableKeyword("_EMISSION");
-                    ghostEyes.GetComponent<MeshRenderer>().material.SetColor("_EmissionColor", Color.white);
+
+                    var torso = ghost.transform.Find("Torso");
+                    torso.transform.parent = backRoot;
+                    torso.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                    torso.transform.localScale = new Vector3(1.5f, 2.5f, 2f);
+                    torso.transform.localPosition = new Vector3(-0.5f, 0, 0);
+
+                    var rightHand = ghost.transform.Find("RightHand");
+                    rightHand.transform.parent = rightHandRoot;
+                    rightHand.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                    rightHand.transform.localScale = 1.5f * Vector3.one;
+                    rightHand.transform.localPosition = Vector3.zero;
+
+                    var leftHand = ghost.transform.Find("LeftHand");
+                    leftHand.transform.parent = leftHandRoot;
+                    leftHand.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                    leftHand.transform.localScale = 1.5f * Vector3.one;
+                    leftHand.transform.localPosition = Vector3.zero;
+
+                    eyes.gameObject.layer = 28;
+                    head.gameObject.layer = 28;
+                    torso.gameObject.layer = 28;
+                    rightHand.gameObject.layer = 28;
+                    leftHand.gameObject.layer = 28;
+
+                    GameObject.Destroy(ghost);
                 }
             }
             catch(Exception)
@@ -113,12 +142,15 @@ namespace ThirdPersonCamera
 
         private void OnHazardsUpdated()
         {
-            var _inFire = _hazardDetector.InHazardType(HazardVolume.HazardType.FIRE);
-            if (_inFire && !_fireRenderer.enabled)
+            var _inFire = _hazardDetector.GetLatestHazardType() == HazardVolume.HazardType.FIRE;
+
+            _activeFireRenderer = (InGreenFire && _dreamFireRenderer != null) ? _dreamFireRenderer : _fireRenderer;
+
+            if (_inFire && !_activeFireRenderer.enabled)
             {   
                 inFire = true;
-                _fireRenderer.material.SetFloat(_propID_Fade, fade);
-                if(Main.IsThirdPerson()) _fireRenderer.enabled = true;
+                _activeFireRenderer.material.SetFloat(_propID_Fade, fade);
+                if(Main.IsThirdPerson()) _activeFireRenderer.enabled = true;
             } 
             else
             {
@@ -132,12 +164,12 @@ namespace ThirdPersonCamera
             {
                 SetArmVisibility(true);
                 SetHeadVisible();
-                _fireRenderer.enabled = fade > 0f;
+                if(_activeFireRenderer != null) _activeFireRenderer.enabled = inFire || fade > 0f;
             }
             else
             {
                 SetArmVisibility(!_isToolHeld);
-                _fireRenderer.enabled = false;
+                if(_activeFireRenderer != null) _activeFireRenderer.enabled = false;
             }
         }
 
@@ -214,15 +246,19 @@ namespace ThirdPersonCamera
                 _setArmVisibleNextTick = false;
             }
 
-            fade = Mathf.MoveTowards(fade, inFire ? 1f : 0f, Time.deltaTime / (inFire ? 1f : 0.5f));
-            _fireRenderer.material.SetAlpha(fade);
-            float fireWidth = PlayerState.IsWearingSuit() ? 1.2f : 0.8f;
-            _fireRenderer.transform.localScale = new Vector3(fireWidth, 2f, fireWidth) * (0.75f + 0.25f * Mathf.Sqrt(fade));
-
-            if (!inFire && fade <= 0f)
+            if(_activeFireRenderer != null && _activeFireRenderer.enabled)
             {
-                fade = 0f;
-                _fireRenderer.enabled = false;
+                fade = Mathf.MoveTowards(fade, inFire ? 1f : 0f, Time.deltaTime / (inFire ? 1f : 0.5f));
+                _activeFireRenderer.material.SetAlpha(fade);
+                float fireWidth = PlayerState.IsWearingSuit() ? 1.2f : 0.8f;
+                if (InGreenFire && _dreamFireRenderer != null) fireWidth = 1.6f;
+                _activeFireRenderer.transform.localScale = new Vector3(fireWidth, 2f, fireWidth) * (0.75f + 0.25f * Mathf.Sqrt(fade));
+
+                if (!inFire && fade <= 0f)
+                {
+                    fade = 0f;
+                    _activeFireRenderer.enabled = false;
+                }
             }
         }
     }

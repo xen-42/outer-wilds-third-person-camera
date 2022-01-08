@@ -14,10 +14,8 @@ namespace ThirdPersonCamera
     public class Main : ModBehaviour
     {
         public static bool IsLoaded { get; private set; } = false;
-        private bool afterMemoryUplink = false;
         private bool _initNextTick = false;
         public bool IsUsingFreeLook;
-
         public static Main SharedInstance { get; private set; }
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
         public static UIHandler UIHandler { get; private set; }
@@ -32,6 +30,19 @@ namespace ThirdPersonCamera
         public static float DefaultPlayerDistance { get; private set; }
         public static float DefaultPlayerSuitDistance { get; private set; }
         public static float DefaultShipDistance { get; private set; }
+
+        private static Transform _probeLauncher;
+        private static Transform _signalScope;
+        private static Transform _translator;
+        private static Transform _itemCarryTool;
+        private static Transform _vesselCoreStow;
+
+        private static readonly Dictionary<Transform, Vector3> _toolInitialPosition = new Dictionary<Transform, Vector3>();
+
+        public static bool IsAtEye;
+        public static bool IsFirstLoop;
+        public static bool IsWakingAtMuseum;
+        private static bool _hasJustDied;
 
         private void Start()
         {
@@ -52,8 +63,6 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("EquipTool", typeof(Patches), nameof(Patches.EquipTool));
             ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("UnequipTool", typeof(Patches), nameof(Patches.UnequipTool));
             ModHelper.HarmonyHelper.AddPostfix<GhostGrabController>("OnStartLiftPlayer", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            //ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("ExitLanternBounds", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            //ModHelper.HarmonyHelper.AddPostfix<DreamWorldController>("EnterLanternBounds", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<ProbeLauncher>("RetrieveProbe", typeof(Patches), nameof(Patches.OnRetrieveProbe));
             ModHelper.HarmonyHelper.AddPrefix<MindProjectorTrigger>("OnProjectionStart", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnProjectionComplete", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
@@ -66,7 +75,6 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPostfix<TimelineObliterationController>("OnCrackEffectComplete", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
             ModHelper.HarmonyHelper.AddPostfix<NomaiTranslatorProp>("Update", typeof(Patches), nameof(Patches.NomaiTranslaterPropUpdate));
             ModHelper.HarmonyHelper.AddPostfix<ShipNotificationDisplay>("Update", typeof(Patches), nameof(Patches.ShipNotificationDisplayUpdate));
-            ModHelper.HarmonyHelper.AddPrefix<ReferenceFrameTracker>("GetPossibleReferenceFrame", typeof(Patches), nameof(Patches.GetPossibleReferenceFrame));
             ModHelper.HarmonyHelper.AddPrefix<ReferenceFrameTracker>("FindReferenceFrameInLineOfSight", typeof(Patches), nameof(Patches.PreFindReferenceFrameInLineOfSight));
             ModHelper.HarmonyHelper.AddPrefix<ReferenceFrameTracker>("FindReferenceFrameInLineOfSight", typeof(Patches), nameof(Patches.PostFindReferenceFrameInLineOfSight));
             ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("UpdateRotation", typeof(Patches), nameof(Patches.UpdateRotation));
@@ -85,6 +93,8 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnBreakPlayerForceAlignment", typeof(Patches), nameof(Patches.OnBreakPlayerForceAlignment));
             ModHelper.HarmonyHelper.AddPrefix<HazardDetector>("OnVolumeAdded", typeof(Patches), nameof(Patches.OnVolumeAdded));
 
+            GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>(JustDied));
+
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
@@ -97,6 +107,13 @@ namespace ThirdPersonCamera
             PlayerMeshHandler.OnDestroy();
             ToolMaterialHandler.OnDestroy();
             HUDHandler.OnDestroy();
+
+            GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", new Callback<DeathType>(JustDied));
+        }
+
+        private void JustDied(DeathType _)
+        {
+            _hasJustDied = true;
         }
 
         public override void Configure(IModConfig config)
@@ -118,16 +135,20 @@ namespace ThirdPersonCamera
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!scene.name.Equals("SolarSystem"))
+            IsAtEye = scene.name.Equals("EyeOfTheUniverse");
+
+            if (!scene.name.Equals("SolarSystem") && !scene.name.Equals("EyeOfTheUniverse"))
             {
                 IsLoaded = false;
-                afterMemoryUplink = false;
+                IsFirstLoop = false;
                 return;
             }
 
-            // Already loaded but we're being put into the SolarSystem scene again
-            // We must have done the memory uplink (universe is reset after)
-            if (IsLoaded) afterMemoryUplink = true;
+            var loopCount = PlayerData.LoadLoopCount();
+            WriteInfo($"Start loop {loopCount}");
+            IsWakingAtMuseum = (IsFirstLoop && loopCount == 1 && !_hasJustDied);
+            _hasJustDied = false;
+            IsFirstLoop = (loopCount == 1) && !IsWakingAtMuseum;
 
             PreInit();
         }
@@ -139,6 +160,7 @@ namespace ThirdPersonCamera
                 ThirdPersonCamera.PreInit();
                 WriteSuccess("ThirdPersonCamera pre-initialization succeeded");
                 _initNextTick = true;
+                IsUsingFreeLook = false;
             }
             catch(Exception e)
             {
@@ -153,11 +175,16 @@ namespace ThirdPersonCamera
                 IsLoaded = true;
 
                 ThirdPersonCamera.Init();
-                UIHandler.Init();
+                if(!IsAtEye) UIHandler.Init();
                 HUDHandler.Init();
                 PlayerMeshHandler.Init();
 
-                if (afterMemoryUplink) ThirdPersonCamera.CameraEnabled = true;
+                if (IsAtEye || IsWakingAtMuseum)
+                {
+                    ThirdPersonCamera.CameraEnabled = true;
+                    if (ThirdPersonCamera.CameraActive) ThirdPersonCamera.ActivateCamera();
+                    else ThirdPersonCamera.DeactivateCamera();
+                }
 
                 try
                 {
@@ -234,17 +261,64 @@ namespace ThirdPersonCamera
 
         public static void OnStartFreeLook()
         {
-            if(PlayerState.InZeroG())
+            if (PlayerState.InZeroG())
             {
                 Locator.GetPlayerController().LockMovement(true);
+            }
+
+            if (_probeLauncher == null)
+            {
+                _probeLauncher = Locator.GetPlayerTransform().Find("PlayerCamera/ProbeLauncher");
+                _toolInitialPosition[_probeLauncher] = _probeLauncher.localPosition;
+            }
+            if (_signalScope == null)
+            {
+                _signalScope = Locator.GetPlayerTransform().Find("PlayerCamera/Signalscope");
+                _toolInitialPosition[_signalScope] = _signalScope.localPosition;
+            }
+            if (_translator == null)
+            {
+                _translator = Locator.GetPlayerTransform().Find("PlayerCamera/NomaiTranslatorProp");
+                _toolInitialPosition[_translator] = _translator.localPosition;
+            }
+            if (_itemCarryTool == null)
+            {
+                _itemCarryTool = Locator.GetPlayerTransform().Find("PlayerCamera/ItemCarryTool");
+                _toolInitialPosition[_itemCarryTool] = _itemCarryTool.localPosition;
+            }
+            if (_vesselCoreStow == null)
+            {
+                _vesselCoreStow = Locator.GetPlayerTransform().Find("PlayerCamera/VesselCoreStowTransform");
+                _toolInitialPosition[_vesselCoreStow] = _vesselCoreStow.localPosition;
+            }
+
+            foreach (var item in new Transform[] { _probeLauncher, _signalScope, _translator, _itemCarryTool, _vesselCoreStow })
+            {
+                var pos = item.transform.position;
+                item.transform.parent = Locator.GetPlayerTransform();
+                item.transform.position = pos;
             }
         }
 
         public static void OnStopFreeLook()
         {
-            if (PlayerState.InZeroG())
+            if (!IsLoaded) return;
+            try
             {
-                Locator.GetPlayerController().UnlockMovement();
+                if (PlayerState.InZeroG())
+                {
+                    Locator.GetPlayerController().UnlockMovement();
+                }
+
+                foreach (var item in new Transform[] { _probeLauncher, _signalScope, _translator, _itemCarryTool, _vesselCoreStow })
+                {
+                    item.transform.parent = Locator.GetPlayerCamera().transform;
+                    item.transform.localPosition = _toolInitialPosition[item];
+                }
+            }
+            catch(Exception e)
+            {
+                WriteError($"{e.StackTrace}, {e.Message}");
             }
         }
 

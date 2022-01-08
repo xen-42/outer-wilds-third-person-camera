@@ -45,7 +45,6 @@ namespace ThirdPersonCamera
         private bool cameraModeLocked = false;
 
         public bool JustStartedLoop = true;
-
         public static OWCamera CurrentCamera { get; private set; }
         public static OWCamera PreviousCamera { get; private set; }
 
@@ -83,6 +82,8 @@ namespace ThirdPersonCamera
 
             GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
 
+            GlobalMessenger.AddListener("ResumeSimulation", new Callback(EnableCamera));
+
             Main.WriteSuccess("Done creating ThirdPersonCamera");
         }
 
@@ -109,6 +110,8 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
 
             GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
+
+            GlobalMessenger.RemoveListener("ResumeSimulation", new Callback(EnableCamera));
 
             Main.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
@@ -166,8 +169,16 @@ namespace ThirdPersonCamera
 
             CurrentCamera = Locator.GetPlayerCamera();
 
-            Locator.GetDreamWorldController().OnEnterLanternBounds += OnEnterLanternBounds;
-            Locator.GetDreamWorldController().OnExitLanternBounds += OnExitLanternBounds;
+            try
+            {
+                Locator.GetDreamWorldController().OnEnterLanternBounds += OnEnterLanternBounds;
+                Locator.GetDreamWorldController().OnExitLanternBounds += OnExitLanternBounds;
+            }
+            catch(Exception)
+            {
+                Main.WriteInfo("Either at the endgame or no DLC");
+            }
+
         }
 
         private float GetMinDistance()
@@ -207,6 +218,7 @@ namespace ThirdPersonCamera
 
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
             SetDefaultDistanceSettings(piloting);
+            GameObject.Find("Ship_Body/Volumes/RFVolume").SetActive(!piloting);
         }
 
         public void SetDefaultDistanceSettings(bool piloting)
@@ -301,6 +313,13 @@ namespace ThirdPersonCamera
 
             Main.WriteInfo($"Third person camera enabled");
 
+            try
+            {
+                GameObject.Find("Ship_Body/Volumes/RFVolume").SetActive(!PlayerState.AtFlightConsole());
+            }
+            catch (Exception) { }
+
+
             CameraEnabled = true;
             if (CameraActive) ActivateCamera();
         }
@@ -326,6 +345,12 @@ namespace ThirdPersonCamera
             if (!CameraEnabled) return;
 
             Main.WriteInfo($"Third person camera disabled");
+            try
+            {
+                GameObject.Find("Ship_Body/Volumes/RFVolume").SetActive(true);
+            }
+            catch (Exception) { }
+
 
             CameraEnabled = false;
             DeactivateCamera();
@@ -468,7 +493,6 @@ namespace ThirdPersonCamera
                 // When piloting we temporarily disable the raycast collision for the ship
                 if (PlayerState.AtFlightConsole()) Locator.GetShipBody().DisableCollisionDetection();
                 else Locator.GetPlayerBody().DisableCollisionDetection();
-                //int layerMask = (1 << 0) | (1 << 9) | (1 << 10) | (1 << 15) | (1 << 22) | (1 << 27) | (1 << 28);
                 int layerMask = OWLayerMask.physicalMask;
                 if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, _desiredDistance, layerMask))
                 {

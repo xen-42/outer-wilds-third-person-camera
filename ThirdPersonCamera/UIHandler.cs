@@ -67,7 +67,7 @@ namespace ThirdPersonCamera
 
         public void Init()
         {
-            _sigScopeDisplay = Locator.GetShipBody().transform.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay").gameObject;
+            _sigScopeDisplay = Locator.GetShipBody()?.transform.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay").gameObject;
 
             Font font = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/SecondaryGroup/GForce/NumericalReadout/GravityText").GetComponent<Text>().font;
 
@@ -132,20 +132,22 @@ namespace ThirdPersonCamera
             SigScopeReticuleParent.transform.position = parent.position + parent.TransformDirection(Vector3.forward) * 2f;
 
             // Signalscope line renderer
-            GameObject _waveFormGameObject = new GameObject();
-            _waveFormGameObject.transform.SetParent(ThirdPersonCamera.GetCamera().gameObject.transform);
-            _waveFormGameObject.transform.position = _waveFormGameObject.transform.parent.position
-                    + _waveFormGameObject.transform.parent.TransformDirection(Vector3.forward) * 200f
-                    + _waveFormGameObject.transform.parent.TransformDirection(Vector3.down) * 120f;
-            _waveFormGameObject.transform.rotation = _waveFormGameObject.transform.parent.rotation;
-            _waveFormGameObject.name = "ShipSignalScopeWaveform";
+            var material = GameObject.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay")?.GetComponentInChildren<LineRenderer>().material;
+            if(material != null)
+            {
+                GameObject _waveFormGameObject = new GameObject();
+                _waveFormGameObject.transform.SetParent(ThirdPersonCamera.GetCamera().gameObject.transform);
+                _waveFormGameObject.transform.position = _waveFormGameObject.transform.parent.position
+                        + _waveFormGameObject.transform.parent.TransformDirection(Vector3.forward) * 200f
+                        + _waveFormGameObject.transform.parent.TransformDirection(Vector3.down) * 120f;
+                _waveFormGameObject.transform.rotation = _waveFormGameObject.transform.parent.rotation;
+                _waveFormGameObject.name = "ShipSignalScopeWaveform";
 
-            var material = GameObject.Find("/Ship_Body/Module_Cockpit/Systems_Cockpit/ShipCockpitUI/SignalScreen/SignalScreenPivot/SigScopeDisplay").GetComponentInChildren<LineRenderer>().material;
-
-            _waveformRenderer = _waveFormGameObject.AddComponent<LineRenderer>();
-            _waveformRenderer.positionCount = 256;
-            _waveformRenderer.material = material;
-            _waveformRenderer.useWorldSpace = false;
+                _waveformRenderer = _waveFormGameObject.AddComponent<LineRenderer>();
+                _waveformRenderer.positionCount = 256;
+                _waveformRenderer.material = material;
+                _waveformRenderer.useWorldSpace = false;
+            }
 
             // SignalScope Text
             GameObject myText3 = new GameObject();
@@ -233,6 +235,8 @@ namespace ThirdPersonCamera
 
         private void OnSwitchActiveCamera(OWCamera camera)
         {
+            if (Main.IsAtEye) return;
+
             if (camera.name == "ThirdPersonCamera")
             {
                 ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
@@ -253,8 +257,11 @@ namespace ThirdPersonCamera
         {
             if (!Main.IsLoaded || ShipText == null) return;
 
-            ShipText.gameObject.SetActive(false);
-            _shipProbeLauncherImage.gameObject.SetActive(false);
+            if(!Main.IsAtEye)
+            {
+                ShipText.gameObject.SetActive(false);
+                _shipProbeLauncherImage.gameObject.SetActive(false);
+            }
 
             SetSignalScopeUIVisible(false);
         }
@@ -264,15 +271,18 @@ namespace ThirdPersonCamera
             if (!Main.IsLoaded) return;
             if (Locator.GetActiveCamera().name != "ThirdPersonCamera") return;
 
-            ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
-            _shipProbeLauncherImage.gameObject.SetActive(PlayerState.AtFlightConsole() && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+            if(!Main.IsAtEye)
+            {
+                ShipText.gameObject.SetActive(PlayerState.AtFlightConsole());
+                _shipProbeLauncherImage.gameObject.SetActive(PlayerState.AtFlightConsole() && _isShipProbeLauncherEquiped && _isShipProbeLauncherPictureTaken);
+            }
 
             SetSignalScopeUIVisible(PlayerState.AtFlightConsole() && _isSignalScopeEquiped && Main.IsThirdPerson());
         }
 
         private void SetSignalScopeUIVisible(bool visible)
         {
-            if (!Main.IsLoaded) return;
+            if (!Main.IsLoaded || Main.IsAtEye) return;
             _signalScopeText.gameObject.SetActive(visible);
             _signalScopeDistanceText.gameObject.SetActive(visible);
             _waveformRenderer.gameObject.SetActive(visible);
@@ -287,12 +297,16 @@ namespace ThirdPersonCamera
 
         private void OnProbeSnapshotRemoved()
         {
+            if (Main.IsAtEye) return;
+
             _isShipProbeLauncherPictureTaken = false;
             if(_shipProbeLauncherImage != null) _shipProbeLauncherImage.gameObject.SetActive(false);
         }
 
         public static void SetProbeLauncherTexture(Texture2D texture)
         {
+            if (Main.IsAtEye) return;
+
             _isShipProbeLauncherPictureTaken = true;
 
             _shipProbeLauncherImage.material.SetTexture("_MainTex", texture);
@@ -302,6 +316,8 @@ namespace ThirdPersonCamera
 
         public static void SetProbeLauncherTexture(RenderTexture texture)
         {
+            if (Main.IsAtEye) return;
+
             _isShipProbeLauncherPictureTaken = true;
 
             _shipProbeLauncherImage.material.SetTexture("_MainTex", texture);
@@ -311,12 +327,16 @@ namespace ThirdPersonCamera
 
         public static void SetSignalScopeLabel(string signalscopeText, string distanceText)
         {
+            if (Main.IsAtEye) return;
+
             _signalScopeText.text = "FREQUENCY:\n" + signalscopeText;
             _signalScopeDistanceText.text = distanceText;
         }
 
         public static void SetSignalScopeWaveform(Vector3[] linePoints)
         {
+            if (Main.IsAtEye) return;
+
             _waveformRenderer.SetPositions(linePoints);
         }
 
