@@ -1,6 +1,7 @@
 # Outer Wilds Third Person Camera
 
 ![3rd person OWDB thumbnail](https://user-images.githubusercontent.com/22628069/146269240-54a849d0-1190-4fd5-bbca-3d5f885fd246.png)
+
 ![Current version](https://img.shields.io/github/manifest-json/v/xen-42/outer-wilds-third-person-camera?color=gree&filename=ThirdPersonCamera%2Fmanifest.json)
 ![Downloads](https://img.shields.io/github/downloads/xen-42/outer-wilds-third-person-camera/total)
 ![Downloads of newest version](https://img.shields.io/github/downloads/xen-42/outer-wilds-third-person-camera/latest/total)
