@@ -1,13 +1,7 @@
-﻿using OWML.ModHelper;
-using OWML.Common;
-using OWML.Utils;
-using UnityEngine;
-using UnityEngine.PostProcessing;
-using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem;
-using UnityEngine.UI;
+﻿using OWML.Utils;
 using System;
-using System.Linq;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ThirdPersonCamera
 {
