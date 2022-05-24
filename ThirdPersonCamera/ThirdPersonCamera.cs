@@ -53,80 +53,73 @@ namespace ThirdPersonCamera
             Main.WriteInfo("Creating ThirdPersonCamera");
 
             // Different behaviour when piloting the ship or not, so we must track this
-            GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
-            GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
+            GlobalMessenger.AddListener("ExitFlightConsole", OnExitFlightConsole);
+            GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", OnEnterFlightConsole);
 
             // Go back to first person on certain actions
-            GlobalMessenger<Campfire>.AddListener("EnterRoastingMode", new Callback<Campfire>(DisableCameraOnRoasting));
-            GlobalMessenger.AddListener("ExitRoastingMode", new Callback(OnExitRoastingMode));
+            GlobalMessenger<Campfire>.AddListener("EnterRoastingMode", DisableCameraOnRoasting);
+            GlobalMessenger.AddListener("ExitRoastingMode", OnExitRoastingMode);
 
-            GlobalMessenger.AddListener("EnterShipComputer", new Callback(DisableCamera));
-            GlobalMessenger.AddListener("ExitShipComputer", new Callback(EnableCamera));
+            GlobalMessenger.AddListener("EnterShipComputer", DisableCamera);
+            GlobalMessenger.AddListener("ExitShipComputer", EnableCamera);
 
-            GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>(DisableCameraOnDeath));
-            GlobalMessenger.AddListener("TriggerMemoryUplink", new Callback(DisableCamera));
-            GlobalMessenger.AddListener("ResetSimulation", new Callback(EnableCamera));
+            GlobalMessenger<DeathType>.AddListener("PlayerDeath", DisableCameraOnDeath);
+            GlobalMessenger.AddListener("TriggerMemoryUplink", DisableCamera);
+            GlobalMessenger.AddListener("ResetSimulation", EnableCamera);
 
-            GlobalMessenger<Signalscope>.AddListener("EnterSignalscopeZoom", new Callback<Signalscope>(DisableCameraOnSignalscopeZoom));
-            GlobalMessenger.AddListener("ExitSignalscopeZoom", new Callback(EnableCamera));
+            GlobalMessenger<Signalscope>.AddListener("EnterSignalscopeZoom", DisableCameraOnSignalscopeZoom);
+            GlobalMessenger.AddListener("ExitSignalscopeZoom", EnableCamera);
 
-            GlobalMessenger.AddListener("StartViewingProjector", new Callback(DisableCamera));
-            GlobalMessenger.AddListener("EndViewingProjector", new Callback(EnableCamera));
+            GlobalMessenger.AddListener("StartViewingProjector", DisableCamera);
+            GlobalMessenger.AddListener("EndViewingProjector", EnableCamera);
 
             // Some custom events
-            GlobalMessenger.AddListener("DisableThirdPersonCamera", new Callback(DisableCamera));
-            GlobalMessenger.AddListener("EnableThirdPersonCamera", new Callback(EnableCamera));
+            GlobalMessenger.AddListener("DisableThirdPersonCamera", DisableCamera);
+            GlobalMessenger.AddListener("EnableThirdPersonCamera", EnableCamera);
 
-            GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
-            GlobalMessenger.AddListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
+            GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", OnShipModuleDetached);
+            GlobalMessenger.AddListener("OnRoastingStickActivate", OnRoastingStickActivate);
 
-            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", OnSwitchActiveCamera);
 
-            GlobalMessenger.AddListener("ResumeSimulation", new Callback(EnableCamera));
+            GlobalMessenger.AddListener("ResumeSimulation", EnableCamera);
 
             Main.WriteSuccess("Done creating ThirdPersonCamera");
         }
 
         public void OnDestroy()
         {
-            GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
-            GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
-            GlobalMessenger<Campfire>.RemoveListener("EnterRoastingMode", new Callback<Campfire>(DisableCameraOnRoasting));
-            GlobalMessenger.RemoveListener("ExitRoastingMode", new Callback(EnableCamera));
-            GlobalMessenger.RemoveListener("EnterShipComputer", new Callback(DisableCamera));
-            GlobalMessenger.RemoveListener("ExitShipComputer", new Callback(EnableCamera));
-            GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", new Callback<DeathType>(DisableCameraOnDeath));
-            GlobalMessenger.RemoveListener("TriggerMemoryUplink", new Callback(DisableCamera));
-            GlobalMessenger.RemoveListener("ResetSimulation", new Callback(EnableCamera));
-            GlobalMessenger<Signalscope>.RemoveListener("EnterSignalscopeZoom", new Callback<Signalscope>(DisableCameraOnSignalscopeZoom));
-            GlobalMessenger.RemoveListener("ExitSignalscopeZoom", new Callback(EnableCamera));
-            GlobalMessenger.RemoveListener("DisableThirdPersonCamera", new Callback(DisableCamera));
-            GlobalMessenger.RemoveListener("EnableThirdPersonCamera", new Callback(EnableCamera));
+            GlobalMessenger.RemoveListener("ExitFlightConsole", OnExitFlightConsole);
+            GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", OnEnterFlightConsole);
+            GlobalMessenger<Campfire>.RemoveListener("EnterRoastingMode", DisableCameraOnRoasting);
+            GlobalMessenger.RemoveListener("ExitRoastingMode", EnableCamera);
+            GlobalMessenger.RemoveListener("EnterShipComputer", DisableCamera);
+            GlobalMessenger.RemoveListener("ExitShipComputer", EnableCamera);
+            GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", DisableCameraOnDeath);
+            GlobalMessenger.RemoveListener("TriggerMemoryUplink", DisableCamera);
+            GlobalMessenger.RemoveListener("ResetSimulation", EnableCamera);
+            GlobalMessenger<Signalscope>.RemoveListener("EnterSignalscopeZoom", DisableCameraOnSignalscopeZoom);
+            GlobalMessenger.RemoveListener("ExitSignalscopeZoom", EnableCamera);
+            GlobalMessenger.RemoveListener("DisableThirdPersonCamera", DisableCamera);
+            GlobalMessenger.RemoveListener("EnableThirdPersonCamera", EnableCamera);
 
-            GlobalMessenger<ShipDetachableModule>.RemoveListener("ShipModuleDetached", new Callback<ShipDetachableModule>(OnShipModuleDetached));
-            GlobalMessenger.RemoveListener("OnRoastingStickActivate", new Callback(OnRoastingStickActivate));
+            GlobalMessenger<ShipDetachableModule>.RemoveListener("ShipModuleDetached", OnShipModuleDetached);
+            GlobalMessenger.RemoveListener("OnRoastingStickActivate", OnRoastingStickActivate);
 
-            GlobalMessenger.RemoveListener("StartViewingProjector", new Callback(DisableCamera));
-            GlobalMessenger.RemoveListener("EndViewingProjector", new Callback(EnableCamera));
+            GlobalMessenger.RemoveListener("StartViewingProjector", DisableCamera);
+            GlobalMessenger.RemoveListener("EndViewingProjector", EnableCamera);
 
-            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", OnSwitchActiveCamera);
 
-            GlobalMessenger.RemoveListener("ResumeSimulation", new Callback(EnableCamera));
+            GlobalMessenger.RemoveListener("ResumeSimulation", EnableCamera);
 
             Main.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
 
         public void PreInit()
         {
-            // Have to do this here or else the skybox breaks
-            _thirdPersonCamera = new GameObject();
-            _thirdPersonCamera.SetActive(false);
-
-            _camera = _thirdPersonCamera.AddComponent<Camera>();
-            _camera.enabled = false;
-
-            OWCamera = _thirdPersonCamera.AddComponent<OWCamera>();
-            OWCamera.renderSkybox = true;
+            (OWCamera, _camera) = Main.SharedInstance.CommonCameraAPI.CreateCustomCamera("ThirdPersonCamera");
+            _thirdPersonCamera = _camera.gameObject;
 
             _desiredDistance = MIN_PLAYER_DISTANCE + Main.DefaultPlayerDistance * (MAX_PLAYER_DISTANCE - MIN_PLAYER_DISTANCE);
         }
@@ -134,19 +127,6 @@ namespace ThirdPersonCamera
         public void Init()
         {
             Main.WriteInfo("Init ThirdPersonCamera");
-
-            // Crashes without this idk stole it from Nebulas FreeCam
-            FlashbackScreenGrabImageEffect temp = _thirdPersonCamera.AddComponent<FlashbackScreenGrabImageEffect>();
-            temp._downsampleShader = Locator.GetPlayerCamera().gameObject.GetComponent<FlashbackScreenGrabImageEffect>()._downsampleShader;
-
-            PlanetaryFogImageEffect _image = _thirdPersonCamera.AddComponent<PlanetaryFogImageEffect>();
-            _image.fogShader = Locator.GetPlayerCamera().gameObject.GetComponent<PlanetaryFogImageEffect>().fogShader;
-
-            PostProcessingBehaviour _postProcessiong = _thirdPersonCamera.AddComponent<PostProcessingBehaviour>();
-            _postProcessiong.profile = Locator.GetPlayerCamera().gameObject.GetAddComponent<PostProcessingBehaviour>().profile;
-
-            _thirdPersonCamera.SetActive(true);
-            _camera.CopyFrom(Locator.GetPlayerCamera().mainCamera);
 
             cameraPivot = new GameObject();
             cameraPivot.transform.parent = Locator.GetPlayerCamera().transform;
@@ -157,8 +137,6 @@ namespace ThirdPersonCamera
             _thirdPersonCamera.transform.parent = cameraPivot.transform;
             _thirdPersonCamera.transform.position = cameraPivot.transform.position;
             _thirdPersonCamera.transform.rotation = cameraPivot.transform.rotation;
-
-            _thirdPersonCamera.name = "ThirdPersonCamera";
 
             // Now loaded but we default to being disabled
             CameraEnabled = false;

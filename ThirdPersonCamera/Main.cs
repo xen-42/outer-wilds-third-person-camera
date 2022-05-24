@@ -16,16 +16,14 @@ namespace ThirdPersonCamera
         public static bool IsLoaded { get; private set; } = false;
         private bool _initNextTick = false;
         public bool IsUsingFreeLook;
+
         public static Main SharedInstance { get; private set; }
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
         public static UIHandler UIHandler { get; private set; }
-        public static PlayerMeshHandler PlayerMeshHandler { get; private set; }
-        public static ToolMaterialHandler ToolMaterialHandler { get; private set; }
         public static HUDHandler HUDHandler { get; private set; }
 
         public static bool KeepFreeLookAngle { get; private set; }
         public static bool UseThirdPersonByDefault { get; private set; }
-        public static bool UseCustomDreamerModel { get; private set; }
 
         public static float DefaultPlayerDistance { get; private set; }
         public static float DefaultPlayerSuitDistance { get; private set; }
@@ -44,6 +42,8 @@ namespace ThirdPersonCamera
         public static bool IsWakingAtMuseum;
         private static bool _hasJustDied;
 
+        public ICommonCameraAPI CommonCameraAPI { get; private set; }
+
         private void Start()
         {
             SharedInstance = this;
@@ -53,8 +53,6 @@ namespace ThirdPersonCamera
             // Helpers
             ThirdPersonCamera = new ThirdPersonCamera();
             UIHandler = new UIHandler();
-            PlayerMeshHandler = new PlayerMeshHandler();
-            ToolMaterialHandler = new ToolMaterialHandler();
             HUDHandler = new HUDHandler();
 
             // Patches
@@ -91,11 +89,20 @@ namespace ThirdPersonCamera
             ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCameraPlatform>("Awake", typeof(Patches), nameof(Patches.NomaiRemoteCameraPlatformAwake));
             ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnInitPlayerForceAlignment", typeof(Patches), nameof(Patches.OnInitPlayerForceAlignment));
             ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnBreakPlayerForceAlignment", typeof(Patches), nameof(Patches.OnBreakPlayerForceAlignment));
-            ModHelper.HarmonyHelper.AddPrefix<HazardDetector>("OnVolumeAdded", typeof(Patches), nameof(Patches.OnVolumeAdded));
 
             GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>(JustDied));
 
             SceneManager.sceneLoaded += OnSceneLoaded;
+
+            try
+            {
+                CommonCameraAPI = ModHelper.Interaction.GetModApi<ICommonCameraAPI>("xen.CommonCameraUtility");
+            }
+            catch (Exception e)
+            {
+                WriteError($"CommonCameraAPI was not found. ThirdPersonCamera will not run. {e.Message}, {e.StackTrace}");
+                enabled = false;
+            }
         }
 
         public void OnDestroy()
@@ -104,8 +111,6 @@ namespace ThirdPersonCamera
 
             ThirdPersonCamera.OnDestroy();
             UIHandler.OnDestroy();
-            PlayerMeshHandler.OnDestroy();
-            ToolMaterialHandler.OnDestroy();
             HUDHandler.OnDestroy();
 
             GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", new Callback<DeathType>(JustDied));
@@ -121,7 +126,6 @@ namespace ThirdPersonCamera
             base.Configure(config);
             KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
             UseThirdPersonByDefault = config.GetSettingsValue<bool>("Use 3rd person by default");
-            UseCustomDreamerModel = config.GetSettingsValue<bool>("Use custom dreamer model");
 
             DefaultPlayerDistance = config.GetSettingsValue<float>("Default camera zoom (no suit)");
             DefaultPlayerSuitDistance = config.GetSettingsValue<float>("Default camera zoom (suit)");
@@ -177,7 +181,6 @@ namespace ThirdPersonCamera
                 ThirdPersonCamera.Init();
                 if(!IsAtEye) UIHandler.Init();
                 HUDHandler.Init();
-                PlayerMeshHandler.Init();
 
                 if (IsAtEye || IsWakingAtMuseum)
                 {
@@ -211,8 +214,6 @@ namespace ThirdPersonCamera
             if (!IsLoaded) return;
 
             ThirdPersonCamera.Update();
-            PlayerMeshHandler.Update();
-            ToolMaterialHandler.Update();
             HUDHandler.Update();
         }
 
