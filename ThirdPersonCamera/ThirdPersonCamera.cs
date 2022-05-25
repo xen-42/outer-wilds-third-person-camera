@@ -8,7 +8,7 @@ namespace ThirdPersonCamera
     public class ThirdPersonCamera
     {
         private static GameObject _thirdPersonCamera;
-        private static Camera  _camera;
+        private static Camera _camera;
         public static OWCamera OWCamera { get; private set; }
 
         private GameObject cameraPivot;
@@ -29,8 +29,8 @@ namespace ThirdPersonCamera
 
         // Enabled is if we are allowed to be in 3rd person
         // Active is if the player wants to be in 3rd person
-        public bool CameraEnabled { get; set; } 
-        public bool CameraActive { get; private set; } 
+        public static bool CameraEnabled { get; set; }
+        public bool CameraActive { get; private set; }
 
         private bool isRoastingMarshmallow = false;
 
@@ -148,7 +148,7 @@ namespace ThirdPersonCamera
                 Locator.GetDreamWorldController().OnEnterLanternBounds += OnEnterLanternBounds;
                 Locator.GetDreamWorldController().OnExitLanternBounds += OnExitLanternBounds;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Main.WriteInfo("Either at the endgame or no DLC");
             }
@@ -221,7 +221,7 @@ namespace ThirdPersonCamera
         }
 
         private void OnSwitchActiveCamera(OWCamera camera)
-        { 
+        {
             PreviousCamera = CurrentCamera;
             CurrentCamera = camera;
 
@@ -347,6 +347,7 @@ namespace ThirdPersonCamera
             {
                 Main.WriteWarning("Couldn't fire event");
             }
+            Locator._activeCamera = OWCamera;
 
             Locator.GetPlayerCamera().mainCamera.enabled = false;
             _camera.enabled = true;
@@ -373,9 +374,9 @@ namespace ThirdPersonCamera
             {
                 if (Locator.GetActiveCamera() != Locator.GetPlayerCamera()) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", Locator.GetPlayerCamera());
             }
-            catch (Exception) 
-            { 
-                Main.WriteWarning("Couldn't fire event"); 
+            catch (Exception)
+            {
+                Main.WriteWarning("Couldn't fire event");
             }
 
             Locator.GetPlayerCamera().mainCamera.enabled = true;
@@ -383,21 +384,28 @@ namespace ThirdPersonCamera
             _distance = 0f;
         }
 
+        public static bool CanUse()
+        {
+            var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope);
+            var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe);
+
+            return !flag1 && !flag2;
+        }
+
         public void Update()
         {
             bool toggle = false;
-            if(!OWInput.IsInputMode(InputMode.Menu))
+            if (!OWInput.IsInputMode(InputMode.Menu))
             {
                 if (Keyboard.current != null)
                 {
                     toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
                 }
 
-                // Don't check this if we are in the signalscope with multiple frequencies available or if we have the probe launcher equiped but not in the ship (same button as change freq/photo mode)
-                var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope) && PlayerData.KnowsMultipleFrequencies();
-                var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe && !PlayerState.AtFlightConsole());
-                if (!flag1 && !flag2)
+                if (CanUse())
+                {
                     toggle |= OWInput.IsNewlyReleased(InputLibrary.toolOptionLeft);
+                }
             }
 
 
@@ -413,7 +421,7 @@ namespace ThirdPersonCamera
             float scroll = -Mouse.current.scroll.ReadValue().y;
 
             // Toggle
-            if(toggle)
+            if (toggle)
             {
                 if (!cameraModeLocked)
                 {

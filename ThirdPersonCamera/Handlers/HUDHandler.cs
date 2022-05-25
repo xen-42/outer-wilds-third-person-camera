@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
-namespace ThirdPersonCamera
+namespace ThirdPersonCamera.Handlers
 {
     public class HUDHandler
     {
@@ -42,7 +38,7 @@ namespace ThirdPersonCamera
 
         private void OnSwitchActiveCamera(OWCamera camera)
         {
-            if(camera.Equals(ThirdPersonCamera.OWCamera))
+            if (camera.Equals(ThirdPersonCamera.OWCamera))
             {
                 ShowHelmetHUD(!PlayerState.AtFlightConsole());
                 ShowMarkers(true);
@@ -140,7 +136,7 @@ namespace ThirdPersonCamera
                     _lightFlickerEffectBubble.transform.localPosition = Vector3.zero;
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Main.WriteError($"{e.StackTrace}, {e.Message}");
             }

@@ -1,13 +1,11 @@
-﻿using OWML.ModHelper;
-using OWML.Common;
-using UnityEngine;
-using UnityEngine.PostProcessing;
-using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem;
+﻿using OWML.Common;
+using OWML.ModHelper;
+using OWML.Utils;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using OWML.Utils;
+using ThirdPersonCamera.Handlers;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ThirdPersonCamera
 {
@@ -151,6 +149,8 @@ namespace ThirdPersonCamera
             try
             {
                 IsLoaded = true;
+
+                Locator.GetPlayerBody().gameObject.AddComponent<PromptHandler>();
 
                 ThirdPersonCamera.Init();
                 if(!IsAtEye) UIHandler.Init();
