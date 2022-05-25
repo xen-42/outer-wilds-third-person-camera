@@ -67,12 +67,13 @@ namespace ThirdPersonCamera
             GlobalMessenger.AddListener("StartViewingProjector", DisableCamera);
             GlobalMessenger.AddListener("EndViewingProjector", EnableCamera);
 
+            GlobalMessenger<GraphicSettings>.AddListener("GraphicSettingsUpdated", OnGraphicSettingsUpdated);
+
             // Some custom events
             GlobalMessenger.AddListener("DisableThirdPersonCamera", DisableCamera);
             GlobalMessenger.AddListener("EnableThirdPersonCamera", EnableCamera);
 
             GlobalMessenger<ShipDetachableModule>.AddListener("ShipModuleDetached", OnShipModuleDetached);
-            GlobalMessenger.AddListener("OnRoastingStickActivate", OnRoastingStickActivate);
 
             GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", OnSwitchActiveCamera);
 
@@ -98,7 +99,6 @@ namespace ThirdPersonCamera
             GlobalMessenger.RemoveListener("EnableThirdPersonCamera", EnableCamera);
 
             GlobalMessenger<ShipDetachableModule>.RemoveListener("ShipModuleDetached", OnShipModuleDetached);
-            GlobalMessenger.RemoveListener("OnRoastingStickActivate", OnRoastingStickActivate);
 
             GlobalMessenger.RemoveListener("StartViewingProjector", DisableCamera);
             GlobalMessenger.RemoveListener("EndViewingProjector", EnableCamera);
@@ -107,12 +107,14 @@ namespace ThirdPersonCamera
 
             GlobalMessenger.RemoveListener("ResumeSimulation", EnableCamera);
 
+            GlobalMessenger<GraphicSettings>.RemoveListener("GraphicSettingsUpdated", OnGraphicSettingsUpdated);
+
             Main.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
         }
 
         public void PreInit()
         {
-            (OWCamera, _camera) = Main.SharedInstance.CommonCameraAPI.CreateCustomCamera("ThirdPersonCamera");
+            (OWCamera, _camera) = Main.CommonCameraAPI.CreateCustomCamera("ThirdPersonCamera");
             _thirdPersonCamera = _camera.gameObject;
 
             _desiredDistance = MIN_PLAYER_DISTANCE + Main.DefaultPlayerDistance * (MAX_PLAYER_DISTANCE - MIN_PLAYER_DISTANCE);
@@ -200,7 +202,7 @@ namespace ThirdPersonCamera
             else _desiredDistance = MIN_PLAYER_DISTANCE + Main.DefaultPlayerDistance * (MAX_PLAYER_DISTANCE - MIN_PLAYER_DISTANCE);
         }
 
-        private void OnRoastingStickActivate()
+        public void OnRoastingStickActivate()
         {
             // Put the stick back to normal
             GameObject stick = GameObject.Find("Stick_Root");
@@ -482,6 +484,17 @@ namespace ThirdPersonCamera
                 // Finally, move the camera into place
                 _thirdPersonCamera.transform.position = origin + direction * _distance;
             }
+        }
+
+        private void OnGraphicSettingsUpdated(GraphicSettings graphicsSettings)
+        {
+            if (OWCamera == null) return;
+
+            if (OWMath.ApproxEquals(graphicsSettings.fieldOfView, _camera.fieldOfView, 0.001f))
+            {
+                return;
+            }
+            _camera.fieldOfView = graphicsSettings.fieldOfView;
         }
 
         public static Camera GetCamera()

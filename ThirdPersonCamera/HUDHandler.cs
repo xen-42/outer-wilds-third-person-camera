@@ -14,23 +14,24 @@ namespace ThirdPersonCamera
         private GameObject _helmet;
         private GameObject _lightFlickerEffectBubble;
         private GameObject _darkMatterBubble;
+        private OWCamera _lastCamera;
 
         public HUDHandler()
         {
-            GlobalMessenger.AddListener("PutOnHelmet", new Callback(OnPutOnHelmet));
-            GlobalMessenger.AddListener("RemoveHelmet", new Callback(OnRemoveHelmet));
-            GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
-            GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
-            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
+            GlobalMessenger.AddListener("PutOnHelmet", OnPutOnHelmet);
+            GlobalMessenger.AddListener("RemoveHelmet", OnRemoveHelmet);
+            GlobalMessenger.AddListener("ExitFlightConsole", OnExitFlightConsole);
+            GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", OnEnterFlightConsole);
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", OnSwitchActiveCamera);
         }
 
         public void OnDestroy()
         {
-            GlobalMessenger.RemoveListener("PutOnHelmet", new Callback(OnPutOnHelmet));
-            GlobalMessenger.RemoveListener("RemoveHelmet", new Callback(OnRemoveHelmet));
-            GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
-            GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
-            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
+            GlobalMessenger.RemoveListener("PutOnHelmet", OnPutOnHelmet);
+            GlobalMessenger.RemoveListener("RemoveHelmet", OnRemoveHelmet);
+            GlobalMessenger.RemoveListener("ExitFlightConsole", OnExitFlightConsole);
+            GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", OnEnterFlightConsole);
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", OnSwitchActiveCamera);
         }
 
         public void Init()
@@ -41,20 +42,20 @@ namespace ThirdPersonCamera
 
         private void OnSwitchActiveCamera(OWCamera camera)
         {
-            if(camera.name == "ThirdPersonCamera")
+            if(camera.Equals(ThirdPersonCamera.OWCamera))
             {
                 ShowHelmetHUD(!PlayerState.AtFlightConsole());
-                ShowReticule(PlayerState.AtFlightConsole());
                 ShowMarkers(true);
                 ShowCockpitLockOn(PlayerState.AtFlightConsole());
             }
-            else
+            else if (_lastCamera.Equals(ThirdPersonCamera.OWCamera))
             {
                 ShowHelmetHUD(false);
-                ShowReticule(true);
                 ShowMarkers(false);
                 ShowCockpitLockOn(false);
             }
+
+            _lastCamera = camera;
         }
 
         public void OnPutOnHelmet()
@@ -69,7 +70,6 @@ namespace ThirdPersonCamera
 
         private void OnExitFlightConsole()
         {
-            ShowReticule(!Main.IsThirdPerson());
             ShowMarkers(Main.IsThirdPerson());
             ShowHelmetHUD(Main.IsThirdPerson());
             ShowCockpitLockOn(false);
@@ -78,7 +78,6 @@ namespace ThirdPersonCamera
         private void OnEnterFlightConsole(OWRigidbody _)
         {
             ShowHelmetHUD(false);
-            ShowReticule(true);
             ShowMarkers(Main.IsThirdPerson());
 
             // Set it next frame or it doesnt work sometimes idk
@@ -90,10 +89,13 @@ namespace ThirdPersonCamera
         {
             try
             {
-                if (_helmetOffUI != null) foreach (Canvas canvas in _helmetOffUI)
+                if (_helmetOffUI != null)
+                {
+                    foreach (Canvas canvas in _helmetOffUI)
                     {
                         canvas.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
                     }
+                }
 
                 if (_helmet != null)
                 {
@@ -141,20 +143,6 @@ namespace ThirdPersonCamera
             catch(Exception e)
             {
                 Main.WriteError($"{e.StackTrace}, {e.Message}");
-            }
-        }
-
-        private void ShowReticule(bool visible)
-        {
-            GameObject reticule = GameObject.Find("Reticule");
-            if(visible)
-            {
-                reticule.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-            }
-            else
-            {
-                reticule.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceCamera;
-                reticule.GetComponent<Canvas>().worldCamera = Locator.GetPlayerCamera().mainCamera;
             }
         }
 

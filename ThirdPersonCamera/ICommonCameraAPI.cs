@@ -1,5 +1,5 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Events;
 
 namespace ThirdPersonCamera
 {
@@ -7,5 +7,7 @@ namespace ThirdPersonCamera
     {
         void RegisterCustomCamera(OWCamera OWCamera);
         (OWCamera, Camera) CreateCustomCamera(string name);
+        UnityEvent<PlayerTool> EquipTool();
+        UnityEvent<PlayerTool> UnequipTool();
     }
 }

@@ -4,6 +4,6 @@
   "name": "Third Person Camera",
   "uniqueName": "xen.ThirdPersonCamera",
   "version": "2.0.0",
-  "owmlVersion": "2.2.0",
+  "owmlVersion": "2.3.2",
   "dependencies": [ "xen.CommonCameraUtility" ]
 }
