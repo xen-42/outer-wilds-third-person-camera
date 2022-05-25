@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace ThirdPersonCamera
+namespace ThirdPersonCamera.Handlers
 {
     public class UIHandler
     {
@@ -41,28 +34,30 @@ namespace ThirdPersonCamera
 
         public UIHandler()
         {
-            GlobalMessenger<PlayerTool>.AddListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
-            GlobalMessenger<PlayerTool>.AddListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.AddListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
-            GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
-            GlobalMessenger.AddListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
-            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
-            GlobalMessenger.AddListener("GamePaused", new Callback(OnGamePaused));
-            GlobalMessenger.AddListener("GameUnpaused", new Callback(OnGameUnpaused));
-            GlobalMessenger<GraphicSettings>.AddListener("GraphicSettingsUpdated", new Callback<GraphicSettings>(OnGraphicSettingsUpdated));
+            Main.CommonCameraAPI.EquipTool().AddListener(OnToolEquiped);
+            Main.CommonCameraAPI.UnequipTool().AddListener(OnToolUnequiped);
+
+            GlobalMessenger.AddListener("ExitFlightConsole", OnExitFlightConsole);
+            GlobalMessenger<OWRigidbody>.AddListener("EnterFlightConsole", OnEnterFlightConsole);
+            GlobalMessenger.AddListener("Probe Snapshot Removed", OnProbeSnapshotRemoved);
+            GlobalMessenger<OWCamera>.AddListener("SwitchActiveCamera", OnSwitchActiveCamera);
+            GlobalMessenger.AddListener("GamePaused", OnGamePaused);
+            GlobalMessenger.AddListener("GameUnpaused", OnGameUnpaused);
+            GlobalMessenger<GraphicSettings>.AddListener("GraphicSettingsUpdated", OnGraphicSettingsUpdated);
         }
 
         public void OnDestroy()
         {
-            GlobalMessenger<PlayerTool>.RemoveListener("OnEquipTool", new Callback<PlayerTool>(OnToolEquiped));
-            GlobalMessenger<PlayerTool>.RemoveListener("OnUnequipTool", new Callback<PlayerTool>(OnToolUnequiped));
-            GlobalMessenger.RemoveListener("ExitFlightConsole", new Callback(OnExitFlightConsole));
-            GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", new Callback<OWRigidbody>(OnEnterFlightConsole));
-            GlobalMessenger.RemoveListener("Probe Snapshot Removed", new Callback(OnProbeSnapshotRemoved));
-            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", new Callback<OWCamera>(OnSwitchActiveCamera));
-            GlobalMessenger.RemoveListener("GamePaused", new Callback(OnGamePaused));
-            GlobalMessenger.RemoveListener("GameUnpaused", new Callback(OnGameUnpaused));
-            GlobalMessenger<GraphicSettings>.RemoveListener("GraphicSettingsUpdated", new Callback<GraphicSettings>(OnGraphicSettingsUpdated));
+            Main.CommonCameraAPI.EquipTool().RemoveListener(OnToolEquiped);
+            Main.CommonCameraAPI.UnequipTool().RemoveListener(OnToolUnequiped);
+
+            GlobalMessenger.RemoveListener("ExitFlightConsole", OnExitFlightConsole);
+            GlobalMessenger<OWRigidbody>.RemoveListener("EnterFlightConsole", OnEnterFlightConsole);
+            GlobalMessenger.RemoveListener("Probe Snapshot Removed", OnProbeSnapshotRemoved);
+            GlobalMessenger<OWCamera>.RemoveListener("SwitchActiveCamera", OnSwitchActiveCamera);
+            GlobalMessenger.RemoveListener("GamePaused", OnGamePaused);
+            GlobalMessenger.RemoveListener("GameUnpaused", OnGameUnpaused);
+            GlobalMessenger<GraphicSettings>.RemoveListener("GraphicSettingsUpdated", OnGraphicSettingsUpdated);
         }
 
         public void Init()

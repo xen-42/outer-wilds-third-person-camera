@@ -1,13 +1,11 @@
-﻿using OWML.ModHelper;
-using OWML.Common;
-using UnityEngine;
-using UnityEngine.PostProcessing;
-using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem;
+﻿using OWML.Common;
+using OWML.ModHelper;
+using OWML.Utils;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using OWML.Utils;
+using ThirdPersonCamera.Handlers;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ThirdPersonCamera
 {
@@ -16,16 +14,14 @@ namespace ThirdPersonCamera
         public static bool IsLoaded { get; private set; } = false;
         private bool _initNextTick = false;
         public bool IsUsingFreeLook;
+
         public static Main SharedInstance { get; private set; }
         public static ThirdPersonCamera ThirdPersonCamera { get; private set; }
         public static UIHandler UIHandler { get; private set; }
-        public static PlayerMeshHandler PlayerMeshHandler { get; private set; }
-        public static ToolMaterialHandler ToolMaterialHandler { get; private set; }
         public static HUDHandler HUDHandler { get; private set; }
 
         public static bool KeepFreeLookAngle { get; private set; }
         public static bool UseThirdPersonByDefault { get; private set; }
-        public static bool UseCustomDreamerModel { get; private set; }
 
         public static float DefaultPlayerDistance { get; private set; }
         public static float DefaultPlayerSuitDistance { get; private set; }
@@ -44,58 +40,36 @@ namespace ThirdPersonCamera
         public static bool IsWakingAtMuseum;
         private static bool _hasJustDied;
 
+        public static ICommonCameraAPI CommonCameraAPI { get; private set; }
+
         private void Start()
         {
             SharedInstance = this;
+
+            try
+            {
+                CommonCameraAPI = ModHelper.Interaction.GetModApi<ICommonCameraAPI>("xen.CommonCameraUtility");
+            }
+            catch (Exception e)
+            {
+                WriteError($"CommonCameraAPI was not found. ThirdPersonCamera will not run. {e.Message}, {e.StackTrace}");
+                enabled = false;
+            }
 
             WriteSuccess($"ThirdPersonCamera is loaded!");
 
             // Helpers
             ThirdPersonCamera = new ThirdPersonCamera();
             UIHandler = new UIHandler();
-            PlayerMeshHandler = new PlayerMeshHandler();
-            ToolMaterialHandler = new ToolMaterialHandler();
             HUDHandler = new HUDHandler();
 
             // Patches
-            ModHelper.HarmonyHelper.AddPostfix<StreamingGroup>("OnFinishOpenEyes", typeof(Patches), nameof(Patches.OnFinishOpenEyes));
-            ModHelper.HarmonyHelper.AddPostfix<PlayerCameraEffectController>("CloseEyes", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("EquipTool", typeof(Patches), nameof(Patches.EquipTool));
-            ModHelper.HarmonyHelper.AddPostfix<PlayerTool>("UnequipTool", typeof(Patches), nameof(Patches.UnequipTool));
-            ModHelper.HarmonyHelper.AddPostfix<GhostGrabController>("OnStartLiftPlayer", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<ProbeLauncher>("RetrieveProbe", typeof(Patches), nameof(Patches.OnRetrieveProbe));
-            ModHelper.HarmonyHelper.AddPrefix<MindProjectorTrigger>("OnProjectionStart", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnProjectionComplete", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<MindProjectorTrigger>("OnTriggerVolumeExit", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<ShipDetachableModule>("Detach", typeof(Patches), nameof(Patches.OnDetach));
-            ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("StartZoomIn", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<LanternZoomPoint>("FinishRetroZoom", typeof(Patches), nameof(Patches.EnableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<RoastingStickController>("OnEnterRoastingMode", typeof(Patches), nameof(Patches.OnRoastingStickActivate));
-            ModHelper.HarmonyHelper.AddPrefix<QuantumObject>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.OnSwitchActiveCamera));
-            ModHelper.HarmonyHelper.AddPostfix<TimelineObliterationController>("OnCrackEffectComplete", typeof(Patches), nameof(Patches.DisableThirdPersonCameraEvent));
-            ModHelper.HarmonyHelper.AddPostfix<NomaiTranslatorProp>("Update", typeof(Patches), nameof(Patches.NomaiTranslaterPropUpdate));
-            ModHelper.HarmonyHelper.AddPostfix<ShipNotificationDisplay>("Update", typeof(Patches), nameof(Patches.ShipNotificationDisplayUpdate));
-            ModHelper.HarmonyHelper.AddPrefix<ReferenceFrameTracker>("FindReferenceFrameInLineOfSight", typeof(Patches), nameof(Patches.PreFindReferenceFrameInLineOfSight));
-            ModHelper.HarmonyHelper.AddPrefix<ReferenceFrameTracker>("FindReferenceFrameInLineOfSight", typeof(Patches), nameof(Patches.PostFindReferenceFrameInLineOfSight));
-            ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("UpdateRotation", typeof(Patches), nameof(Patches.UpdateRotation));
-            ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("Update", typeof(Patches), nameof(Patches.PlayerCameraControllerUpdate));
-            ModHelper.HarmonyHelper.AddPrefix<PlayerCameraController>("UpdateInput", typeof(Patches), nameof(Patches.UpdateInput));
-            ModHelper.HarmonyHelper.AddPrefix<PlayerCharacterController>("UpdateTurning", typeof(Patches), nameof(Patches.UpdateTurning));
-            ModHelper.HarmonyHelper.AddPostfix<ProbeLauncherUI>("OnTakeSnapshot", typeof(Patches), nameof(Patches.OnTakeSnapshot));
-            ModHelper.HarmonyHelper.AddPrefix<QuantumObject>("IsLockedByProbeSnapshot", typeof(Patches), nameof(Patches.IsLockedByProbeSnapshot));
-            ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateLabels", typeof(Patches), nameof(Patches.UpdateLabels));
-            ModHelper.HarmonyHelper.AddPostfix<SignalscopeUI>("UpdateWaveform", typeof(Patches), nameof(Patches.UpdateWaveform));
-            ModHelper.HarmonyHelper.AddPostfix<SignalscopeReticleController>("UpdateBrackets", typeof(Patches), nameof(Patches.UpdateBrackets));
-            ModHelper.HarmonyHelper.AddPrefix<HUDCamera>("OnSwitchActiveCamera", typeof(Patches), nameof(Patches.HUDCameraOnSwitchActiveCamera));
-            ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCamera>("LateUpdate", typeof(Patches), nameof(Patches.NomaiRemoteCameraLateUpdate));
-            ModHelper.HarmonyHelper.AddPrefix<NomaiRemoteCameraPlatform>("Awake", typeof(Patches), nameof(Patches.NomaiRemoteCameraPlatformAwake));
-            ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnInitPlayerForceAlignment", typeof(Patches), nameof(Patches.OnInitPlayerForceAlignment));
-            ModHelper.HarmonyHelper.AddPrefix<PlayerState>("OnBreakPlayerForceAlignment", typeof(Patches), nameof(Patches.OnBreakPlayerForceAlignment));
-            ModHelper.HarmonyHelper.AddPrefix<HazardDetector>("OnVolumeAdded", typeof(Patches), nameof(Patches.OnVolumeAdded));
+            Patches.Apply();
 
             GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>(JustDied));
 
             SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
         public void OnDestroy()
@@ -104,8 +78,6 @@ namespace ThirdPersonCamera
 
             ThirdPersonCamera.OnDestroy();
             UIHandler.OnDestroy();
-            PlayerMeshHandler.OnDestroy();
-            ToolMaterialHandler.OnDestroy();
             HUDHandler.OnDestroy();
 
             GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", new Callback<DeathType>(JustDied));
@@ -121,7 +93,6 @@ namespace ThirdPersonCamera
             base.Configure(config);
             KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
             UseThirdPersonByDefault = config.GetSettingsValue<bool>("Use 3rd person by default");
-            UseCustomDreamerModel = config.GetSettingsValue<bool>("Use custom dreamer model");
 
             DefaultPlayerDistance = config.GetSettingsValue<float>("Default camera zoom (no suit)");
             DefaultPlayerSuitDistance = config.GetSettingsValue<float>("Default camera zoom (suit)");
@@ -153,6 +124,11 @@ namespace ThirdPersonCamera
             PreInit();
         }
 
+        private void OnSceneUnloaded(Scene scene)
+        {
+            IsLoaded = false;
+        }
+
         private void PreInit()
         {
             try
@@ -174,10 +150,11 @@ namespace ThirdPersonCamera
             {
                 IsLoaded = true;
 
+                Locator.GetPlayerBody().gameObject.AddComponent<PromptHandler>();
+
                 ThirdPersonCamera.Init();
                 if(!IsAtEye) UIHandler.Init();
                 HUDHandler.Init();
-                PlayerMeshHandler.Init();
 
                 if (IsAtEye || IsWakingAtMuseum)
                 {
@@ -211,8 +188,6 @@ namespace ThirdPersonCamera
             if (!IsLoaded) return;
 
             ThirdPersonCamera.Update();
-            PlayerMeshHandler.Update();
-            ToolMaterialHandler.Update();
             HUDHandler.Update();
         }
 
