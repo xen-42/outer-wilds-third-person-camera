@@ -16,3 +16,7 @@ There are a few settings in the options menu:
 
 ![Using the translator](https://user-images.githubusercontent.com/22628069/143732387-f3c82062-37d5-46d5-8b06-11500168d55a.png)
 ![Using autopilot](https://user-images.githubusercontent.com/22628069/143732389-5b8e5d94-0f57-4c93-b5af-cf5e7123e9c9.png)
+
+### Credits
+
+Uses [free controller and keyboard prompts](https://thoseawesomeguys.com/prompts/) from Xelu, just like stock Outer Wilds.
