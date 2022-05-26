@@ -9,8 +9,6 @@ namespace ThirdPersonCamera.Handlers
         private static Texture2D _vKey;
         private static bool _initialized;
 
-        private bool _usingGamepad;
-        private bool _canUse;
         private bool _enabled;
 
         private void Awake()
@@ -36,9 +34,6 @@ namespace ThirdPersonCamera.Handlers
 
             var toolMode = Locator.GetToolModeSwapper().GetToolMode();
 
-            _canUse = (ThirdPersonCamera.CanUse() && ThirdPersonCamera.CameraEnabled);
-            _usingGamepad = OWInput.UsingGamepad();
-
             UpdatePromptVisibility();
         }
 
@@ -54,44 +49,31 @@ namespace ThirdPersonCamera.Handlers
 
         private void Update()
         {
-            if (OWInput.UsingGamepad() != _usingGamepad)
-            {
-                _usingGamepad = !_usingGamepad;
-                UpdatePromptVisibility();
-            }
-
-            if (_canUse != (ThirdPersonCamera.CanUse() && ThirdPersonCamera.CameraEnabled))
-            {
-                _canUse = !_canUse;
-                UpdatePromptVisibility();
-            }
+            UpdatePromptVisibility();
         }
 
         private void OnGamePaused()
         {
             _enabled = false;
-            UpdatePromptVisibility();
         }
 
         private void OnGameUnpaused()
         {
             _enabled = true;
-            UpdatePromptVisibility();
         }
 
         private void OnWakeUp()
         {
             _enabled = true;
-            UpdatePromptVisibility();
         }
 
         private void UpdatePromptVisibility()
         {
-            if (_enabled)
+            var canUse = (ThirdPersonCamera.CanUse() && ThirdPersonCamera.CameraEnabled);
+            if (_enabled && canUse)
             {
-                // CanUse is only for game pad
-                _gamepadCameraPrompt.SetVisibility(_usingGamepad && _canUse);
-                _keyboardCameraPrompt.SetVisibility(!_usingGamepad);
+                _gamepadCameraPrompt.SetVisibility(OWInput.UsingGamepad());
+                _keyboardCameraPrompt.SetVisibility(!OWInput.UsingGamepad());
             }
             else
             {
