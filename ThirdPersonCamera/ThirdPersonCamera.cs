@@ -386,23 +386,31 @@ namespace ThirdPersonCamera
 
         public static bool CanUse()
         {
-            var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope);
-            var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe);
+            // Only allow use in certain input modes
+            if (!OWInput.IsInputMode(InputMode.Character | InputMode.Dialogue | InputMode.ShipCockpit | InputMode.ModelShip | InputMode.LandingCam)) return false;
 
-            return !flag1 && !flag2;
+            // When using gamepad we're more restrictive
+            if (OWInput.UsingGamepad())
+            {
+                var flag1 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.SignalScope);
+                var flag2 = (Locator.GetToolModeSwapper().GetToolMode() == ToolMode.Probe);
+                return !flag1 && !flag2;
+            }
+
+            return true;
         }
 
         public void Update()
         {
             bool toggle = false;
-            if (!OWInput.IsInputMode(InputMode.Menu))
+            if (CanUse())
             {
                 if (Keyboard.current != null)
                 {
                     toggle |= Keyboard.current[Key.V].wasReleasedThisFrame;
                 }
 
-                if (CanUse())
+                if (OWInput.UsingGamepad())
                 {
                     toggle |= OWInput.IsNewlyReleased(InputLibrary.toolOptionLeft);
                 }
