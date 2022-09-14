@@ -42,6 +42,8 @@ namespace ThirdPersonCamera
         public static OWCamera CurrentCamera { get; private set; }
         public static OWCamera PreviousCamera { get; private set; }
 
+        private bool _fireEventNextTick;
+
         public ThirdPersonCamera()
         {
             Main.WriteInfo("Creating ThirdPersonCamera");
@@ -236,9 +238,8 @@ namespace ThirdPersonCamera
                     cameraModeLocked = false;
                     if (CameraActive && CameraEnabled)
                     {
-                        ActivateCamera(false);
-                        OnSwitchActiveCamera(OWCamera);
-                    }
+						ActivateCamera();
+					}
                     break;
                 case "RemoteViewerCamera":
                 case "FREECAM":
@@ -252,8 +253,7 @@ namespace ThirdPersonCamera
                 case "PlayerCamera":
                     if (CameraActive && CameraEnabled)
                     {
-                        ActivateCamera(true);
-                        OnSwitchActiveCamera(OWCamera);
+                        ActivateCamera();
                     }
                     break;
                 case "MapCamera":
@@ -330,7 +330,7 @@ namespace ThirdPersonCamera
             DeactivateCamera();
         }
 
-        public void ActivateCamera(bool fireSwitchActiveCamera = true)
+        public void ActivateCamera()
         {
             Main.WriteInfo("Activate third person camera");
 
@@ -341,13 +341,13 @@ namespace ThirdPersonCamera
 
             try
             {
-                if (fireSwitchActiveCamera && (OWCamera != Locator.GetActiveCamera() || JustStartedLoop)) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", OWCamera);
+                if (OWCamera != Locator.GetActiveCamera() || JustStartedLoop) GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", OWCamera);
             }
-            catch (Exception)
-            {
-                Main.WriteWarning("Couldn't fire event");
-            }
-            Locator._activeCamera = OWCamera;
+			catch (Exception)
+			{
+				_fireEventNextTick = true;
+			}
+			Locator._activeCamera = OWCamera;
 
             Locator.GetPlayerCamera().mainCamera.enabled = false;
             _camera.enabled = true;
@@ -376,8 +376,8 @@ namespace ThirdPersonCamera
             }
             catch (Exception)
             {
-                Main.WriteWarning("Couldn't fire event");
-            }
+                _fireEventNextTick = true;
+			}
 
             Locator.GetPlayerCamera().mainCamera.enabled = true;
             _camera.enabled = false;
@@ -402,7 +402,13 @@ namespace ThirdPersonCamera
 
         public void Update()
         {
-            bool toggle = false;
+			if (_fireEventNextTick)
+			{
+				GlobalMessenger<OWCamera>.FireEvent("SwitchActiveCamera", OWCamera);
+                _fireEventNextTick = false;
+			}
+
+			bool toggle = false;
             if (CanUse())
             {
                 if (Keyboard.current != null)
@@ -415,7 +421,6 @@ namespace ThirdPersonCamera
                     toggle |= OWInput.IsNewlyReleased(InputLibrary.toolOptionLeft);
                 }
             }
-
 
             if (!CameraEnabled)
             {

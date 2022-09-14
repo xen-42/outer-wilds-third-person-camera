@@ -20,6 +20,7 @@
       "value": "0.3",
       "min": 0,
       "max": 1
-    }
+    },
+    "Debug logs": false
   }
 }
