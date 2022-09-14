@@ -1,9 +1,10 @@
 {
+  "$schema": "https://raw.githubusercontent.com/amazingalek/owml/master/schemas/manifest_schema.json",
   "filename": "ThirdPersonCamera.dll",
   "author": "xen",
   "name": "Third Person Camera",
   "uniqueName": "xen.ThirdPersonCamera",
-  "version": "2.0.1",
-  "owmlVersion": "2.3.2",
+  "version": "2.0.2",
+  "owmlVersion": "2.6.0",
   "dependencies": [ "xen.CommonCameraUtility" ]
 }

@@ -27,6 +27,8 @@ namespace ThirdPersonCamera
         public static float DefaultPlayerSuitDistance { get; private set; }
         public static float DefaultShipDistance { get; private set; }
 
+        public static bool DebugLogs { get; private set; }
+
         private static Transform _probeLauncher;
         private static Transform _signalScope;
         private static Transform _translator;
@@ -48,12 +50,20 @@ namespace ThirdPersonCamera
 
             try
             {
-                CommonCameraAPI = ModHelper.Interaction.GetModApi<ICommonCameraAPI>("xen.CommonCameraUtility");
+                CommonCameraAPI = ModHelper.Interaction.TryGetModApi<ICommonCameraAPI>("xen.CommonCameraUtility");
             }
             catch (Exception e)
             {
-                WriteError($"CommonCameraAPI was not found. ThirdPersonCamera will not run. {e.Message}, {e.StackTrace}");
-                enabled = false;
+                WriteError($"{e}");
+
+            }
+            finally
+            {
+                if (CommonCameraAPI == null)
+                {
+					WriteError($"CommonCameraAPI was not found. ThirdPersonCamera will not run.");
+					enabled = false;
+				}
             }
 
             WriteSuccess($"ThirdPersonCamera is loaded!");
@@ -97,7 +107,9 @@ namespace ThirdPersonCamera
             DefaultPlayerDistance = config.GetSettingsValue<float>("Default camera zoom (no suit)");
             DefaultPlayerSuitDistance = config.GetSettingsValue<float>("Default camera zoom (suit)");
             DefaultShipDistance = config.GetSettingsValue<float>("Default camera zoom (ship)");
-            
+
+            DebugLogs = config.GetSettingsValue<bool>("Debug logs");
+
             if(ThirdPersonCamera != null)
             {
                 ThirdPersonCamera.SetDefaultDistanceSettings(PlayerState.AtFlightConsole());
@@ -162,12 +174,6 @@ namespace ThirdPersonCamera
                     if (ThirdPersonCamera.CameraActive) ThirdPersonCamera.ActivateCamera();
                     else ThirdPersonCamera.DeactivateCamera();
                 }
-
-                try
-                {
-                    ModHelper.Interaction.GetMod("xen.DayDream").GetValue<List<OWCamera>>("Cameras").Add(ThirdPersonCamera.OWCamera);
-                }
-                catch (Exception) { }
 
                 WriteSuccess("ThirdPersonCamera initialization succeeded");
             }
@@ -297,24 +303,20 @@ namespace ThirdPersonCamera
             }
         }
 
-        public static void WriteError(string msg)
-        {
-            SharedInstance.ModHelper.Console.WriteLine(msg, MessageType.Error);
-        }
+        public static void WriteError(string msg) => Write(msg, MessageType.Error);
 
-        public static void WriteWarning(string msg)
-        {
-            SharedInstance.ModHelper.Console.WriteLine(msg, MessageType.Warning);
-        }
+        public static void WriteWarning(string msg) => Write(msg, MessageType.Warning);
 
-        public static void WriteInfo(string msg)
-        {
-            SharedInstance.ModHelper.Console.WriteLine(msg, MessageType.Info);
-        }
+        public static void WriteInfo(string msg) => Write(msg, MessageType.Info);
 
-        public static void WriteSuccess(string msg)
+        public static void WriteSuccess(string msg) => Write(msg, MessageType.Success);
+
+        public static void Write(string msg, MessageType type)
         {
-            SharedInstance.ModHelper.Console.WriteLine(msg, MessageType.Success);
+            if (DebugLogs || type == MessageType.Error)
+            {
+				SharedInstance.ModHelper.Console.WriteLine(msg, type);
+			}
         }
-    }
+	}
 }
