@@ -4,7 +4,7 @@
   "author": "xen",
   "name": "Third Person Camera",
   "uniqueName": "xen.ThirdPersonCamera",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "owmlVersion": "2.6.0",
   "dependencies": [ "xen.CommonCameraUtility" ]
 }

@@ -7,7 +7,9 @@ namespace ThirdPersonCamera
     {
         void RegisterCustomCamera(OWCamera OWCamera);
         (OWCamera, Camera) CreateCustomCamera(string name);
-        UnityEvent<PlayerTool> EquipTool();
+		void ExitCamera(OWCamera OWCamera);
+		void EnterCamera(OWCamera OWCamera);
+		UnityEvent<PlayerTool> EquipTool();
         UnityEvent<PlayerTool> UnequipTool();
     }
 }

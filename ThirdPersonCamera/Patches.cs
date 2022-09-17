@@ -78,36 +78,8 @@ namespace ThirdPersonCamera
 
         public static bool OnSwitchActiveCamera(OWCamera activeCamera)
         {
-            // Not sure who gets the event first
-            bool flag = false;
-            string currentCamera;
-            string previousCamera;
-
-            // If we switched from ThirdPersonCamera to PlayerCamera or vice versa we don't want to do anything
-            try
-            {
-                currentCamera = ThirdPersonCamera.CurrentCamera.name;
-                previousCamera = ThirdPersonCamera.PreviousCamera.name;
-            }
-            catch(Exception)
-            {
-                // If something goes wrong just run the original method.
-                return true;
-            }
-
-            // If we got the event first
-            flag |= currentCamera == "PlayerCamera" && previousCamera == "ThirdPersonCamera";
-            flag |= currentCamera == "ThirdPersonCamera" && previousCamera == "PlayerCamera";
-
-            // If they got the event first
-            previousCamera = currentCamera;
-            currentCamera = activeCamera.name;
-
-            flag |= currentCamera == "PlayerCamera" && previousCamera == "ThirdPersonCamera";
-            flag |= currentCamera == "ThirdPersonCamera" && previousCamera == "PlayerCamera";
-
-            // If flag we don't run the original method
-            return !flag;
+            // If its the third person camera ignore it
+            return (activeCamera != ThirdPersonCamera.OWCamera);
         }
 
         public static void NomaiTranslaterPropUpdate(NomaiTranslatorProp __instance, Text ____textField)
