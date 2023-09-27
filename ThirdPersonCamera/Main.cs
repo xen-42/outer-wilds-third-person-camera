@@ -12,7 +12,6 @@ namespace ThirdPersonCamera
     public class Main : ModBehaviour
     {
         public static bool IsLoaded { get; private set; } = false;
-        private bool _initNextTick = false;
         public bool IsUsingFreeLook;
 
         public static Main SharedInstance { get; private set; }
@@ -35,7 +34,7 @@ namespace ThirdPersonCamera
         private static Transform _itemCarryTool;
         private static Transform _vesselCoreStow;
 
-        private static readonly Dictionary<Transform, Vector3> _toolInitialPosition = new Dictionary<Transform, Vector3>();
+        private static readonly Dictionary<Transform, Vector3> _toolInitialPosition = new();
 
         public static bool IsAtEye;
         public static bool IsFirstLoop;
@@ -69,14 +68,14 @@ namespace ThirdPersonCamera
             WriteSuccess($"ThirdPersonCamera is loaded!");
 
             // Helpers
-            ThirdPersonCamera = new ThirdPersonCamera();
-            UIHandler = new UIHandler();
-            HUDHandler = new HUDHandler();
+            ThirdPersonCamera = gameObject.AddComponent<ThirdPersonCamera>();
+            UIHandler = gameObject.AddComponent<UIHandler>();
+            HUDHandler = gameObject.AddComponent<HUDHandler>();
 
             // Patches
             Patches.Apply();
 
-            GlobalMessenger<DeathType>.AddListener("PlayerDeath", new Callback<DeathType>(JustDied));
+            GlobalMessenger<DeathType>.AddListener("PlayerDeath", OnPlayerDeath);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -85,15 +84,10 @@ namespace ThirdPersonCamera
         public void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-
-            ThirdPersonCamera.OnDestroy();
-            UIHandler.OnDestroy();
-            HUDHandler.OnDestroy();
-
-            GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", new Callback<DeathType>(JustDied));
+            GlobalMessenger<DeathType>.RemoveListener("PlayerDeath", OnPlayerDeath);
         }
 
-        private void JustDied(DeathType _)
+        private void OnPlayerDeath(DeathType _)
         {
             _hasJustDied = true;
         }
@@ -147,9 +141,9 @@ namespace ThirdPersonCamera
             {
                 ThirdPersonCamera.PreInit();
                 WriteSuccess("ThirdPersonCamera pre-initialization succeeded");
-                _initNextTick = true;
                 IsUsingFreeLook = false;
-            }
+				FireOnNextUpdate(Init);
+			}
             catch(Exception e)
             {
                 WriteError($"ThirdPersonCamera pre-initialization failed. {e.Message}. {e.StackTrace}");
@@ -181,20 +175,6 @@ namespace ThirdPersonCamera
             {
                 WriteError($"ThirdPersonCamera initialization failed. {e.Message}. {e.StackTrace}");
             }
-        }
-
-        private void Update()
-        {
-            if(_initNextTick)
-            {
-                Init();
-                _initNextTick = false;
-            }
-
-            if (!IsLoaded) return;
-
-            ThirdPersonCamera.Update();
-            HUDHandler.Update();
         }
 
         public static bool IsThirdPerson()
@@ -293,13 +273,16 @@ namespace ThirdPersonCamera
 
                 foreach (var item in new Transform[] { _probeLauncher, _signalScope, _translator, _itemCarryTool, _vesselCoreStow })
                 {
-                    item.transform.parent = Locator.GetPlayerCamera().transform;
-                    item.transform.localPosition = _toolInitialPosition[item];
+					if (item != null)
+					{
+						item.transform.parent = Locator.GetPlayerCamera().transform;
+						item.transform.localPosition = _toolInitialPosition[item];
+					}
                 }
             }
             catch(Exception e)
             {
-                WriteError($"{e.StackTrace}, {e.Message}");
+                WriteError($"{e}");
             }
         }
 
@@ -318,5 +301,7 @@ namespace ThirdPersonCamera
 				SharedInstance.ModHelper.Console.WriteLine(msg, type);
 			}
         }
+
+		public static void FireOnNextUpdate(Action action) => SharedInstance.ModHelper.Events.Unity.FireOnNextUpdate(action);
 	}
 }

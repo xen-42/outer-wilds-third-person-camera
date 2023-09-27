@@ -84,25 +84,26 @@ namespace ThirdPersonCamera
 
         public static void NomaiTranslaterPropUpdate(NomaiTranslatorProp __instance, Text ____textField)
         {
-            Text screenText = UIHandler.TranslatorText;
-            if (screenText != null) screenText.text = ____textField.text;
+			if (UIHandler.TranslatorText != null)
+			{
+				UIHandler.TranslatorText.text = ____textField.text;
+			}
         }
 
         public static void ShipNotificationDisplayUpdate(ShipNotificationDisplay __instance, Canvas ____displayCanvas)
         {
             if (__instance.name != "ConsoleDisplay") return;
 
-            Text screenText = UIHandler.ShipText;
-
             string text = "";
 
             foreach(Text t in ____displayCanvas.GetComponentsInChildren<Text>())
             {
+				// What is TestText what why
                 if (t.name == "TestText") continue;
                 text += t.text.Replace("\n", " ") + "\n";
             }
 
-            screenText.text = __instance.HasText() ? text : "";
+			UIHandler.ShipText.text = text;
         }
 
         public static bool GetPossibleReferenceFrame(ReferenceFrameTracker __instance, ReferenceFrame ____possibleReferenceFrame)

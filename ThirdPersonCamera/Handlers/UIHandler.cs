@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace ThirdPersonCamera.Handlers
 {
-    public class UIHandler
+    public class UIHandler : MonoBehaviour
     {
         public static Text ShipText { get; private set; }
         public static Text TranslatorText { get; private set; }
@@ -32,8 +32,10 @@ namespace ThirdPersonCamera.Handlers
 
         private GameObject _sigScopeDisplay;
 
-        public UIHandler()
-        {
+		private SuitNotificationDisplay _suitNotificationDisplay;
+
+		public void Awake()
+		{
             Main.CommonCameraAPI.EquipTool().AddListener(OnToolEquiped);
             Main.CommonCameraAPI.UnequipTool().AddListener(OnToolUnequiped);
 
@@ -173,7 +175,9 @@ namespace ThirdPersonCamera.Handlers
             ResetGraphicsSizes();
 
             SetSignalScopeUIVisible(false);
-        }
+
+			_suitNotificationDisplay = GameObject.FindObjectOfType<SuitNotificationDisplay>();
+		}
 
         private void OnToolEquiped(PlayerTool t)
         {
@@ -371,5 +375,17 @@ namespace ThirdPersonCamera.Handlers
             _signalscopeDistanceRectTransform.localPosition = new Vector3(0, (int)(0.35f * -height), 0);
             _signalscopeDistanceRectTransform.sizeDelta = new Vector2((int)(width * 0.6f), (int)(0.5f * height));
         }
-    }
+
+		public void Update()
+		{
+			if (!Main.IsLoaded)
+			{
+				return;
+			}
+
+			// Hide notifications when in third person and showing text in the same place
+			var shouldHideNotifications = Main.IsThirdPerson() && !PlayerState.AtFlightConsole() && !string.IsNullOrEmpty(TranslatorText.text);
+			if (_suitNotificationDisplay.gameObject.activeSelf == shouldHideNotifications) _suitNotificationDisplay.gameObject.SetActive(!shouldHideNotifications);
+		}
+	}
 }

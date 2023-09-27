@@ -3,17 +3,16 @@ using UnityEngine;
 
 namespace ThirdPersonCamera.Handlers
 {
-    public class HUDHandler
+    public class HUDHandler	: MonoBehaviour
     {
-        private bool _checkCockpitLockOnNextTick = false;
         private Canvas[] _helmetOffUI;
         private GameObject _helmet;
         private GameObject _lightFlickerEffectBubble;
         private GameObject _darkMatterBubble;
         private OWCamera _lastCamera;
 
-        public HUDHandler()
-        {
+		public void Awake()
+		{
             GlobalMessenger.AddListener("PutOnHelmet", OnPutOnHelmet);
             GlobalMessenger.AddListener("RemoveHelmet", OnRemoveHelmet);
             GlobalMessenger.AddListener("ExitFlightConsole", OnExitFlightConsole);
@@ -34,7 +33,7 @@ namespace ThirdPersonCamera.Handlers
         {
             _helmetOffUI = GameObject.Find("PlayerHUD/HelmetOffUI")?.GetComponentsInChildren<Canvas>();
             _helmet = GameObject.Find("Helmet");
-        }
+		}
 
         private void OnSwitchActiveCamera(OWCamera camera)
         {
@@ -69,17 +68,17 @@ namespace ThirdPersonCamera.Handlers
             ShowMarkers(Main.IsThirdPerson());
             ShowHelmetHUD(Main.IsThirdPerson());
             ShowCockpitLockOn(false);
-        }
+		}
 
         private void OnEnterFlightConsole(OWRigidbody _)
         {
             ShowHelmetHUD(false);
             ShowMarkers(Main.IsThirdPerson());
 
-            // Set it next frame or it doesnt work sometimes idk
-            _checkCockpitLockOnNextTick = true;
+			// Set it next frame or it doesnt work sometimes idk
+			Main.FireOnNextUpdate(() => ShowCockpitLockOn(Main.IsThirdPerson()));
             ShowCockpitLockOn(Main.IsThirdPerson());
-        }
+		}
 
         private void ShowHelmetHUD(bool visible)
         {
@@ -155,14 +154,6 @@ namespace ThirdPersonCamera.Handlers
         {
             Canvas c = GameObject.Find("CockpitLockOnCanvas")?.GetComponentInChildren<Canvas>();
             if (c != null) c.worldCamera = visible ? ThirdPersonCamera.GetCamera() : Locator.GetPlayerCamera().mainCamera;
-        }
-
-        public void Update()
-        {
-            if (_checkCockpitLockOnNextTick)
-            {
-                ShowCockpitLockOn(Main.IsThirdPerson());
-            }
         }
     }
 }

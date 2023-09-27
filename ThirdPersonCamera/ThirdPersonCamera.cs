@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace ThirdPersonCamera
 {
-    public class ThirdPersonCamera
+    public class ThirdPersonCamera : MonoBehaviour
     {
         private static GameObject _thirdPersonCamera;
         private static Camera _camera;
@@ -39,9 +39,10 @@ namespace ThirdPersonCamera
         private bool cameraModeLocked = false;
 
         public bool JustStartedLoop = true;
+		public static OWCamera PreviousCamera { get; private set; }
         public static OWCamera CurrentCamera { get; private set; }
 
-        public ThirdPersonCamera()
+        public void Awake()
         {
             Main.WriteInfo("Creating ThirdPersonCamera");
 
@@ -221,7 +222,8 @@ namespace ThirdPersonCamera
 
         private void OnSwitchActiveCamera(OWCamera camera)
         {
-            CurrentCamera = camera;
+			PreviousCamera = CurrentCamera;
+			CurrentCamera = camera;
 
 			cameraModeLocked = false;
 
@@ -236,6 +238,12 @@ namespace ThirdPersonCamera
                 case "ThirdPersonCamera":
                     CameraEnabled = true;
                     break;
+			}
+
+			// Weird bug where using the landing camera mode thinks it put you into the PlayerCamera when it didn't
+			if (PreviousCamera.name == "LandingCamera" && CurrentCamera.name == "PlayerCamera" && CameraActive && CameraEnabled)
+			{
+				ActivateCamera();
 			}
         }
 
@@ -252,6 +260,7 @@ namespace ThirdPersonCamera
         public void EnableCamera()
         {
             if (CameraEnabled || OWCamera == null) return;
+
             // If you're quick you can go from sleeping right into roasting before your eyes fully open (enables 3rd person)
             if (isRoastingMarshmallow) return;
 
@@ -265,7 +274,10 @@ namespace ThirdPersonCamera
 
 
             CameraEnabled = true;
-            if (CameraActive) ActivateCamera();
+			if (CameraActive)
+			{
+				ActivateCamera();
+			}
         }
 
         private void DisableCameraOnDeath(DeathType _t)
@@ -296,7 +308,7 @@ namespace ThirdPersonCamera
             catch (Exception) { }
 
             CameraEnabled = false;
-            DeactivateCamera();
+            DeactivateCamera(returnWhenReenabled: true);
         }
 
         public void ActivateCamera()
@@ -318,11 +330,15 @@ namespace ThirdPersonCamera
             _distance = Mathf.Clamp(_distance, minDistance, maxDistance);
         }
 
-        public void DeactivateCamera()
+        public void DeactivateCamera(bool returnWhenReenabled = false)
         {
             Main.WriteInfo("Deactivate third person camera");
 
-            CameraActive = false;
+			// Leave it active if we want to go back into the camera once we can
+			if (!returnWhenReenabled)
+			{
+				CameraActive = false;
+			}
 
             // Don't actually change camera because here we just move it
             if (CurrentCamera.name.Equals("RemoteViewerCamera")) return;
@@ -350,6 +366,8 @@ namespace ThirdPersonCamera
 
         public void Update()
         {
+			if (!Main.IsLoaded) return;
+
 			bool toggle = false;
             if (CanUse())
             {
