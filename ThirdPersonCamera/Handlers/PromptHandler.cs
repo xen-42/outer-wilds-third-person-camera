@@ -70,7 +70,7 @@ namespace ThirdPersonCamera.Handlers
         private void UpdatePromptVisibility()
         {
             var canUse = (ThirdPersonCamera.CanUse() && ThirdPersonCamera.CameraEnabled);
-            if (_enabled && canUse)
+            if (_enabled && canUse && PlayerData.GetPromptsEnabled())
             {
                 _gamepadCameraPrompt.SetVisibility(OWInput.UsingGamepad());
                 _keyboardCameraPrompt.SetVisibility(!OWInput.UsingGamepad());
