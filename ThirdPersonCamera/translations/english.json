@@ -1,0 +1,14 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/xen-42/outer-wilds-new-horizons/main/NewHorizons/Schemas/translation_schema.json",
+  "UIDictionary": {
+    "Show button prompts": "Show button prompts",
+    "Keep free look angle": "Keep free look angle",
+    "Use 3rd person by default": "Use 3rd person by default",
+    "Default camera zoom (no suit)": "Default camera zoom (no suit)",
+    "Default camera zoom (suit)": "Default camera zoom (suit)",
+    "Default camera zoom (ship)": "Default camera zoom (ship)",
+    "Debug logs": "Debug logs",
+
+    "THIRD_PERSON_CAMERA_TOGGLE": "Toggle Third Person <CMD>"
+  }
+}

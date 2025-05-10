@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net48</TargetFramework>
-		<LangVersion>default</LangVersion>
+		<LangVersion>latest</LangVersion>
 		<Copyright>Copyright © 2020</Copyright>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -13,8 +13,9 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="HarmonyX" Version="2.10.0" />
-		<PackageReference Include="OWML" Version="2.9.8" />
-		<PackageReference Include="OuterWildsGameLibs" Version="1.1.14.768" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="OWML" Version="2.15.2" />
+		<PackageReference Include="OuterWildsGameLibs" Version="1.1.16.1351" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="default-config.json">
@@ -26,11 +27,11 @@
 		<None Include="assets/**">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+    <None Include="translations/**">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="ThirdPersonCamera.csproj.user" />
-	</ItemGroup>
-	<ItemGroup>
-		<Folder Include="assets\" />
 	</ItemGroup>
 </Project>

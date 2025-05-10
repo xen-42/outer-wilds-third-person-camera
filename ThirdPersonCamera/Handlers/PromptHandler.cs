@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using UnityEngine;
 
 namespace ThirdPersonCamera.Handlers
 {
@@ -7,23 +8,19 @@ namespace ThirdPersonCamera.Handlers
         private static ScreenPrompt _gamepadCameraPrompt;
         private static ScreenPrompt _keyboardCameraPrompt;
         private static Texture2D _vKey;
-        private static bool _initialized;
+        private static Sprite _vSprite;
 
         private bool _enabled;
 
         public void Awake()
         {
-            // Only ever has to happen once
-            if(!_initialized)
-            {
-                _vKey = Main.SharedInstance.ModHelper.Assets.GetTexture("assets/V_Key_Dark.png");
+            _vKey = Main.SharedInstance.ModHelper.Assets.GetTexture("assets/V_Key_Dark.png");
+            _vSprite = Sprite.Create(_vKey, new Rect(0, 0, _vKey.width, _vKey.height), new Vector2(_vKey.width, _vKey.height) / 2f);
 
-                var vSprite = Sprite.Create(_vKey, new Rect(0, 0, _vKey.width, _vKey.height), new Vector2(_vKey.width, _vKey.height) / 2f);
-                _gamepadCameraPrompt = new ScreenPrompt(InputLibrary.toolOptionLeft, "Toggle Third Person <CMD>");
-                _keyboardCameraPrompt = new ScreenPrompt("Toggle Third Person <CMD>", vSprite);
+            var promptText = TranslationHandler.GetTranslation("THIRD_PERSON_CAMERA_TOGGLE");
 
-                _initialized = true;
-            }
+            _gamepadCameraPrompt = new ScreenPrompt(InputLibrary.toolOptionLeft, promptText);
+            _keyboardCameraPrompt = new ScreenPrompt(promptText, _vSprite);
 
             Locator.GetPromptManager().AddScreenPrompt(_gamepadCameraPrompt, PromptPosition.UpperRight, false);
             Locator.GetPromptManager().AddScreenPrompt(_keyboardCameraPrompt, PromptPosition.UpperRight, false);
@@ -41,6 +38,9 @@ namespace ThirdPersonCamera.Handlers
         {
             Locator.GetPromptManager().RemoveScreenPrompt(_gamepadCameraPrompt, PromptPosition.UpperRight);
             Locator.GetPromptManager().RemoveScreenPrompt(_keyboardCameraPrompt, PromptPosition.UpperRight);
+
+            Object.Destroy(_vSprite);
+            Object.Destroy(_vKey);
 
             GlobalMessenger.RemoveListener("GamePaused", OnGamePaused);
             GlobalMessenger.RemoveListener("GameUnpaused", OnGameUnpaused);
