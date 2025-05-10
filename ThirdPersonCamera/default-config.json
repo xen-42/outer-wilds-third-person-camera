@@ -1,6 +1,7 @@
 {
   "enabled": true,
   "settings": {
+    "Show button prompts": true,
     "Keep free look angle": false,
     "Use 3rd person by default": true,
     "Default camera zoom (no suit)": {

@@ -11,7 +11,7 @@ namespace ThirdPersonCamera.Handlers
 
         private bool _enabled;
 
-        private void Awake()
+        public void Awake()
         {
             // Only ever has to happen once
             if(!_initialized)
@@ -37,7 +37,7 @@ namespace ThirdPersonCamera.Handlers
             UpdatePromptVisibility();
         }
 
-        private void OnDestroy()
+        public void OnDestroy()
         {
             Locator.GetPromptManager().RemoveScreenPrompt(_gamepadCameraPrompt, PromptPosition.UpperRight);
             Locator.GetPromptManager().RemoveScreenPrompt(_keyboardCameraPrompt, PromptPosition.UpperRight);
@@ -47,7 +47,7 @@ namespace ThirdPersonCamera.Handlers
             GlobalMessenger.RemoveListener("WakeUp", OnWakeUp);
         }
 
-        private void Update()
+        public void Update()
         {
             UpdatePromptVisibility();
         }
@@ -70,7 +70,7 @@ namespace ThirdPersonCamera.Handlers
         private void UpdatePromptVisibility()
         {
             var canUse = (ThirdPersonCamera.CanUse() && ThirdPersonCamera.CameraEnabled);
-            if (_enabled && canUse)
+            if (Main.ShowButtonPrompts && _enabled && canUse)
             {
                 _gamepadCameraPrompt.SetVisibility(OWInput.UsingGamepad());
                 _keyboardCameraPrompt.SetVisibility(!OWInput.UsingGamepad());
