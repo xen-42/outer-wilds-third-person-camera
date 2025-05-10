@@ -5,10 +5,10 @@ namespace ThirdPersonCamera.Handlers
 {
     public class PromptHandler : MonoBehaviour
     {
-        private static ScreenPrompt _gamepadCameraPrompt;
-        private static ScreenPrompt _keyboardCameraPrompt;
-        private static Texture2D _vKey;
-        private static Sprite _vSprite;
+        private ScreenPrompt _gamepadCameraPrompt;
+        private ScreenPrompt _keyboardCameraPrompt;
+        private Texture2D _vKey;
+        private Sprite _vSprite;
 
         private bool _enabled;
 
@@ -29,22 +29,23 @@ namespace ThirdPersonCamera.Handlers
             GlobalMessenger.AddListener("GameUnpaused", OnGameUnpaused);
             GlobalMessenger.AddListener("WakeUp", OnWakeUp);
 
-            var toolMode = Locator.GetToolModeSwapper().GetToolMode();
-
             UpdatePromptVisibility();
         }
 
         public void OnDestroy()
         {
-            Locator.GetPromptManager().RemoveScreenPrompt(_gamepadCameraPrompt, PromptPosition.UpperRight);
-            Locator.GetPromptManager().RemoveScreenPrompt(_keyboardCameraPrompt, PromptPosition.UpperRight);
-
-            Object.Destroy(_vSprite);
-            Object.Destroy(_vKey);
+            if (Locator.GetPromptManager() != null)
+            {
+                Locator.GetPromptManager().RemoveScreenPrompt(_gamepadCameraPrompt, PromptPosition.UpperRight);
+                Locator.GetPromptManager().RemoveScreenPrompt(_keyboardCameraPrompt, PromptPosition.UpperRight);
+            }
 
             GlobalMessenger.RemoveListener("GamePaused", OnGamePaused);
             GlobalMessenger.RemoveListener("GameUnpaused", OnGameUnpaused);
             GlobalMessenger.RemoveListener("WakeUp", OnWakeUp);
+
+            Object.Destroy(_vSprite);
+            Object.Destroy(_vKey);
         }
 
         public void Update()

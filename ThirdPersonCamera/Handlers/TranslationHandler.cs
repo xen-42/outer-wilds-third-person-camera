@@ -25,7 +25,7 @@ namespace ThirdPersonCamera.Handlers
                 }
                 catch(Exception e)
                 {
-                    Main.WriteWarning($"Failed to load translation for {language} - {e.ToString()}");
+                    Main.WriteWarning($"Failed to load translation for {language} - {e.Message}");
                 }
             }
 
