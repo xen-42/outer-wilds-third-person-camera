@@ -26,6 +26,8 @@ namespace ThirdPersonCamera
         public static float DefaultPlayerSuitDistance { get; private set; }
         public static float DefaultShipDistance { get; private set; }
 
+        public static bool ShowButtonPrompts { get; private set; }
+
         public static bool DebugLogs { get; private set; }
 
         private static Transform _probeLauncher;
@@ -43,7 +45,7 @@ namespace ThirdPersonCamera
 
         public static ICommonCameraAPI CommonCameraAPI { get; private set; }
 
-        private void Start()
+        public void Start()
         {
             SharedInstance = this;
 
@@ -95,6 +97,7 @@ namespace ThirdPersonCamera
         public override void Configure(IModConfig config)
         {
             base.Configure(config);
+            ShowButtonPrompts = config.GetSettingsValue<bool>("Show button prompts");
             KeepFreeLookAngle = config.GetSettingsValue<bool>("Keep free look angle");
             UseThirdPersonByDefault = config.GetSettingsValue<bool>("Use 3rd person by default");
 

@@ -2,6 +2,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace ThirdPersonCamera
 {
@@ -79,6 +80,8 @@ namespace ThirdPersonCamera
 
             GlobalMessenger.AddListener("ResumeSimulation", EnableCamera);
 
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+
             Main.WriteSuccess("Done creating ThirdPersonCamera");
         }
 
@@ -109,7 +112,14 @@ namespace ThirdPersonCamera
 
             GlobalMessenger<GraphicSettings>.RemoveListener("GraphicSettingsUpdated", OnGraphicSettingsUpdated);
 
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
             Main.WriteSuccess($"Done destroying {nameof(ThirdPersonCamera)}");
+        }
+
+        private void OnSceneUnloaded(Scene scene)
+        {
+            CameraActive = false;
         }
 
         public void PreInit()
