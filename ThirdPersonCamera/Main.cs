@@ -131,6 +131,11 @@ namespace ThirdPersonCamera
             IsFirstLoop = (loopCount == 1) && !IsWakingAtMuseum;
 
             PreInit();
+
+            // #7 For some reason, taking a photo with the scout then starting a new loop breaks the ship log screen
+            // Bug fixes itself when you take a snapshot
+            // Okay, let's just start each loop by taking a snapshot! I hate it but it works!
+            GameObject.FindObjectOfType<ProbeCamera>().TakeSnapshot();
         }
 
         private void OnSceneUnloaded(Scene scene)
